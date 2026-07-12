@@ -1,0 +1,16 @@
+// Ascent Ledger — Prisma schema
+//
+// Phase 0: datasource + generator only. Data models (User, Climb, Area, …)
+// arrive in Phase 1+ per docs/PLAN.md §7.
+//
+// Connection URLs live in prisma.config.ts (Prisma 7+), sourced from the
+// DATABASE_URL environment variable — never hardcoded here.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
