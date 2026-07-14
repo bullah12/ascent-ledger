@@ -1,0 +1,60 @@
+<!-- lease/v1 — example HTML-to-PDF template (Handlebars merge fields).
+     All values arrive pre-formatted in the view model; no formatting here.
+     Toggle sections use explicit booleans (clauses.pets, clauses.garden). -->
+<style>
+  @page { size: A4; margin: 25mm 20mm; }
+  body { font: 11pt/1.5 "Source Serif 4", Georgia, serif; color: #111; }
+  h1 { font-size: 16pt; text-align: center; letter-spacing: 0.05em; }
+  h2 { font-size: 12pt; margin-top: 1.6em; page-break-after: avoid; }
+  .parties td { padding: 2pt 12pt 2pt 0; vertical-align: top; }
+  .clause { page-break-inside: avoid; }
+  .signature-block { margin-top: 3em; page-break-inside: avoid; }
+  .signature-line { border-bottom: 1px solid #111; width: 60%; height: 2.5em; }
+</style>
+
+<h1>ASSURED SHORTHOLD TENANCY AGREEMENT</h1>
+
+<table class="parties">
+  <tr><td><strong>Landlord:</strong></td><td>{{landlord.fullName}}</td></tr>
+  <tr><td><strong>Tenant:</strong></td><td>{{tenant.fullName}}</td></tr>
+  <tr><td><strong>Property:</strong></td>
+      <td>{{property.addressLine1}}, {{property.city}}, {{property.postcode}}</td></tr>
+</table>
+
+<h2>1. Term</h2>
+<p class="clause">
+  The tenancy begins on {{tenancy.startDateLong}} and ends on
+  {{tenancy.endDateLong}}, being a fixed term of {{tenancy.termMonthsWords}}.
+</p>
+
+<h2>2. Rent</h2>
+<p class="clause">
+  The rent is {{tenancy.rentAmountLegal}} per calendar month, payable in
+  advance on the {{tenancy.rentDueDayOrdinal}} day of each month.
+</p>
+
+<h2>3. Deposit</h2>
+<p class="clause">
+  A deposit of {{tenancy.depositAmountLegal}} is held under the
+  {{tenancy.depositSchemeName}} scheme (reference {{tenancy.depositReference}}).
+</p>
+
+{{#if clauses.pets}}
+<h2>4. Pets</h2>
+<p class="clause">The Tenant may keep the following pet(s) at the Property:
+   {{clauses.petsDescription}}.</p>
+{{/if}}
+
+{{#if clauses.garden}}
+<h2>{{#if clauses.pets}}5{{else}}4{{/if}}. Garden</h2>
+<p class="clause">The Tenant shall keep the garden in a tidy condition.</p>
+{{/if}}
+
+<div class="signature-block">
+  <p>Signed by the Landlord:</p><div class="signature-line"></div>
+  <p>Date:</p><div class="signature-line" style="width:30%"></div>
+</div>
+<div class="signature-block">
+  <p>Signed by the Tenant:</p><div class="signature-line"></div>
+  <p>Date:</p><div class="signature-line" style="width:30%"></div>
+</div>

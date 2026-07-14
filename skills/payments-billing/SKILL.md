@@ -1,0 +1,132 @@
+---
+name: payments-billing
+description: Taking money safely with Stripe — checkout, webhooks, refunds, idempotency, and an internal payments ledger. Covers one-off payments (ecommerce) and recurring collection (rent).
+used-by: [ecommerce-platform, property-management]
+---
+
+# Skill: Payments & Billing
+
+## Purpose
+
+Accept payments without inventing payment infrastructure: Stripe holds card
+data and moves money; our database keeps an authoritative ledger of what was
+charged, why, and what state it's in. The same pattern covers ecommerce
+checkout and (optionally) rent collection.
+
+## When to Use
+
+- Ecommerce checkout (one-off payments, refunds).
+- Wholesale invoicing (Stripe Invoices) — pay-by-invoice terms.
+- Property management rent collection *if* moving beyond manual tracking
+  (Stripe recurring invoices or Payment Links per tenant).
+
+Not needed while a project only *records* money movements that happen
+elsewhere (property management v1 tracks rent paid by bank transfer — that's
+just the `transactions` table, no Stripe).
+
+## Inputs
+
+- What is being sold and how amounts are computed (always server-side).
+- Refund policy, currencies (default: single currency per project).
+- For recurring: billing day, retry/dunning expectations.
+
+## Outputs
+
+- `payments` ledger table + `stripe_events` inbox table.
+- Checkout endpoint(s) + webhook handler.
+- Refund flow reachable from the admin dashboard.
+
+## Default Stack
+
+- **Stripe** (`stripe` npm SDK).
+  - One-off: **Stripe Checkout** (hosted page) first; Payment Intents +
+    Elements only when the flow must be fully in-house.
+  - Recurring/invoicing: Stripe Invoices / Subscriptions.
+- **Stripe CLI** for local webhook forwarding in dev.
+- Test mode keys in `.env`, never in code. Separate live/test API keys per
+  environment; webhook signing secret per endpoint.
+
+## Golden Rules
+
+1. **Prices are computed server-side.** The client sends product/variant IDs
+   and quantities; the server derives amounts (including wholesale tier
+   pricing). Never accept an amount from the client.
+2. **Webhooks are the source of truth** for payment state — not the redirect
+   back from Checkout. The success page says "confirming…" until the webhook
+   lands.
+3. **Idempotency everywhere.** Pass an idempotency key to every Stripe create
+   call (derive from order ID). Webhook handler dedupes by event ID.
+4. **Store your own ledger.** Stripe's dashboard is not your ledger; you need
+   payment rows joined to your orders/leases for reporting and support.
+5. **Money is integer cents** with an explicit `currency` (see
+   `database-schema-design`).
+
+## Core Schema
+
+```sql
+CREATE TABLE payments (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject_type      text NOT NULL,        -- 'order' | 'rent_invoice'
+  subject_id        uuid NOT NULL,
+  amount_cents      integer NOT NULL CHECK (amount_cents > 0),
+  currency          text NOT NULL DEFAULT 'gbp',
+  status            text NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending','succeeded','failed','refunded','partially_refunded')),
+  provider          text NOT NULL DEFAULT 'stripe',
+  provider_payment_id text UNIQUE,        -- Stripe PaymentIntent / Invoice id
+  refunded_cents    integer NOT NULL DEFAULT 0,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE stripe_events (              -- webhook inbox: dedupe + audit
+  id          text PRIMARY KEY,           -- Stripe event id (evt_...)
+  type        text NOT NULL,
+  payload     jsonb NOT NULL,
+  processed_at timestamptz,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+```
+
+## Webhook Handler Pattern
+
+1. Verify signature (`stripe.webhooks.constructEvent`) with the raw body.
+2. Insert into `stripe_events`; on conflict (already seen) → 200 and stop.
+3. Enqueue processing as a job (see `notifications-scheduling`); return 200
+   fast. Handle at minimum: `checkout.session.completed`,
+   `payment_intent.payment_failed`, `charge.refunded`,
+   and for invoices `invoice.paid` / `invoice.payment_failed`.
+4. Processing updates `payments.status`, then advances the domain object
+   (order → `paid`; rent invoice → `paid`) and triggers notifications.
+
+## Checkout Flow (ecommerce)
+
+1. `POST /api/v1/checkout` with cart ID → server prices the cart (retail or
+   wholesale tier), creates the order as `pending`, creates a Checkout
+   Session (idempotency key = order ID), returns the session URL.
+2. Customer pays on Stripe; webhook confirms; order → `paid`; inventory
+   decrements; confirmation email enqueued.
+3. Abandoned sessions: orders left `pending` past session expiry are swept to
+   `cancelled` by a scheduled job, restocking any reservations.
+
+## Rent Collection (property management, optional phase)
+
+- Per tenancy, create a Stripe Customer + recurring Invoice (or a monthly
+  Payment Link generated by the scheduler).
+- `invoice.paid` webhook writes the `transactions` row automatically —
+  replacing manual entry, not changing the data model.
+
+## Best Practices
+
+- Reconcile nightly: scheduled job compares recent Stripe payments against
+  the ledger; mismatches surface on the admin dashboard.
+- Refunds go through your API (permission-checked, ledger-updated), which
+  calls Stripe — staff never refund from the Stripe dashboard.
+- Log Stripe request IDs; never log full card data or webhook secrets (you
+  never see PANs with Checkout — keep it that way).
+- Test with Stripe test clocks for subscription/dunning flows.
+
+## Used By
+
+- **ecommerce-platform** — checkout, refunds, wholesale invoicing.
+- **property-management** — phase 2: automated rent collection feeding the income tab.
