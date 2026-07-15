@@ -1,0 +1,101 @@
+{
+  "_comment": "DRAFT — cross-checked via two independent fetches of https://www.bmg.org.uk/become-a-guide/prerequisites/ (2026-07-12), the second asking for verbatim quotes only. Numbers below were consistent across both passes EXCEPT one alpine sub-rule from the first pass ('5 routes must be 800m+ mixed') which did NOT reappear on the verbatim pass and has been removed as likely fabricated — a concrete example of why every 'verified' field here is still false. Read the live page yourself, correct anything wrong (see 'alpine areas' note below in particular), flip 'verified' to true per rule, THEN hand this file to Fable for Phase 2. Do not seed the app from this file unverified.",
+  "categories": [
+    {
+      "key": "rock",
+      "label": "Rock Climbing",
+      "rules": [
+        {
+          "description": "Multi-pitch UK trad routes at E1 5b or above, led or alternate-led, across Scotland/England/Wales",
+          "min_grade": "E1 5b",
+          "min_count": 50,
+          "extra_constraint": { "regions": ["Scotland", "England", "Wales"], "style": ["led", "alternate_lead"] },
+          "verified": false,
+          "source_note": "\"At least 50 multi-pitch climbs E1 5b or above\" — CONFIRM exact wording/number on live page"
+        }
+      ]
+    },
+    {
+      "key": "winter",
+      "label": "Winter Climbing",
+      "rules": [
+        {
+          "description": "Snow and ice climbs, Grade III or harder, UK",
+          "min_grade": "III",
+          "min_count": 50,
+          "extra_constraint": { "region": "UK" },
+          "verified": false,
+          "source_note": "part of \"at least 60 snow and ice climbs\" total — CONFIRM breakdown"
+        },
+        {
+          "description": "Of the above, at Grade V or harder",
+          "min_grade": "V",
+          "min_count": 20,
+          "extra_constraint": { "region": "UK" },
+          "verified": false,
+          "source_note": "\"20 must be Grade V+\" — CONFIRM exact number"
+        },
+        {
+          "description": "Icefall/cascade climbs WI4+, Alps or equivalent",
+          "min_grade": "WI4",
+          "min_count": 10,
+          "extra_constraint": { "region": "Alps or equivalent" },
+          "verified": false,
+          "source_note": "CONFIRM exact number and whether 'or equivalent' regions are defined anywhere"
+        }
+      ]
+    },
+    {
+      "key": "alpine",
+      "label": "Alpine Mountaineering",
+      "rules": [
+        {
+          "description": "Ascents of major alpine summits, over a minimum span of years",
+          "min_grade": null,
+          "min_count": 20,
+          "extra_constraint": { "min_years_span": 4, "min_distinct_areas": 3 },
+          "verified": false,
+          "source_note": "\"Twenty ascents of major summits ... over a minimum period of at least four years\" and \"at least three\" Alpine areas — consistent across both fetches, still CONFIRM wording on live page"
+        },
+        {
+          "description": "Of the above, at TD or harder",
+          "min_grade": "TD",
+          "min_count": 10,
+          "extra_constraint": {},
+          "verified": false,
+          "source_note": "\"ten of which must be TD or harder\" — consistent across both fetches, still CONFIRM"
+        }
+      ]
+    },
+    {
+      "key": "ski_touring",
+      "label": "Ski Touring",
+      "rules": [
+        {
+          "description": "Ski-touring days, glaciated Alpine terrain",
+          "min_grade": null,
+          "min_count": 30,
+          "extra_constraint": { "unit": "days", "region": "Alps", "terrain": "glaciated" },
+          "verified": false,
+          "source_note": "\"Minimum of 30 days ski-touring experience\" — CONFIRM"
+        },
+        {
+          "description": "Of the above, multi-day hut-based tours (3+ consecutive nights)",
+          "min_grade": null,
+          "min_count": 15,
+          "extra_constraint": { "unit": "days", "min_consecutive_nights": 3 },
+          "verified": false,
+          "source_note": "CONFIRM"
+        },
+        {
+          "description": "Lift-accessed off-piste days, Alps",
+          "min_grade": null,
+          "min_count": 15,
+          "extra_constraint": { "unit": "days", "region": "Alps", "access": "lift" },
+          "verified": false,
+          "source_note": "CONFIRM"
+        }
+      ]
+    }
+  ]
+}
