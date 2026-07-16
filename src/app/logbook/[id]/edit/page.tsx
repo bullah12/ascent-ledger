@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { gradeSystemsByDiscipline } from "@/lib/grades";
 import { updateClimb } from "../../actions";
 import { ClimbForm } from "../../climb-form";
 
@@ -33,6 +34,10 @@ export default async function EditClimbPage({
           routeName: climb.freeTextRouteName,
           discipline: climb.discipline,
           date: climb.date.toISOString().slice(0, 10),
+          // Phase 1 rows predate the grade engine and have no system stored;
+          // preselect the discipline's default so saving backfills it.
+          gradeSystem:
+            climb.gradeSystem ?? gradeSystemsByDiscipline[climb.discipline][0],
           gradeRaw: climb.gradeRaw,
           ascentStyle: climb.ascentStyle,
           area: climb.area?.name ?? "",

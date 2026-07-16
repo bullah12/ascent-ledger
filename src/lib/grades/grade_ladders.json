@@ -1,0 +1,122 @@
+{
+  "_comment": "One ordinal ladder per grade system (PLAN.md §3): scores are positions WITHIN a system, never comparable across systems. Aliases are matched case-insensitively as a prefix of the raw grade string up to a boundary (space, comma, slash), longest alias wins — so 'E1 5b' matches E1, 'V,6' matches V, 'VI,7' matches VI. french_sport and uiaa are intentionally empty stubs until a phase needs them.",
+  "uk_trad": {
+    "label": "UK trad (adjectival)",
+    "_note": "Score follows the adjectival grade only; the tech grade (5b in 'E1 5b') is kept in grade_raw but does not affect the ordinal.",
+    "entries": [
+      { "score": 1, "label": "Moderate", "aliases": ["MODERATE", "MOD", "M"] },
+      { "score": 2, "label": "Difficult", "aliases": ["DIFFICULT", "DIFF", "D"] },
+      { "score": 3, "label": "Hard Difficult", "aliases": ["HARD DIFFICULT", "HARD DIFF", "HD"] },
+      { "score": 4, "label": "Very Difficult", "aliases": ["VERY DIFFICULT", "V DIFF", "VDIFF", "V.DIFF", "VD"] },
+      { "score": 5, "label": "Hard Very Difficult", "aliases": ["HARD VERY DIFFICULT", "HARD V DIFF", "HVD"] },
+      { "score": 6, "label": "Severe", "aliases": ["SEVERE", "SEV", "S"] },
+      { "score": 7, "label": "Hard Severe", "aliases": ["HARD SEVERE", "HS"] },
+      { "score": 8, "label": "Very Severe", "aliases": ["VERY SEVERE", "VS"] },
+      { "score": 9, "label": "Hard Very Severe", "aliases": ["HARD VERY SEVERE", "HVS"] },
+      { "score": 10, "label": "E1", "aliases": ["E1"] },
+      { "score": 11, "label": "E2", "aliases": ["E2"] },
+      { "score": 12, "label": "E3", "aliases": ["E3"] },
+      { "score": 13, "label": "E4", "aliases": ["E4"] },
+      { "score": 14, "label": "E5", "aliases": ["E5"] },
+      { "score": 15, "label": "E6", "aliases": ["E6"] },
+      { "score": 16, "label": "E7", "aliases": ["E7"] },
+      { "score": 17, "label": "E8", "aliases": ["E8"] },
+      { "score": 18, "label": "E9", "aliases": ["E9"] },
+      { "score": 19, "label": "E10", "aliases": ["E10"] },
+      { "score": 20, "label": "E11", "aliases": ["E11"] },
+      { "score": 21, "label": "E12", "aliases": ["E12"] }
+    ]
+  },
+  "scottish_winter": {
+    "label": "Scottish winter",
+    "_note": "Roman numeral overall grade I–XII; the technical numeral ('V,6') is kept in grade_raw but does not affect the ordinal. Mixed M grades are placed on the same ladder at the numerically matching rung (M5 ~ V) — a rough, documented approximation so M-graded mixed climbs still count against Scottish-grade thresholds.",
+    "entries": [
+      { "score": 1, "label": "I", "aliases": ["I", "M1"] },
+      { "score": 2, "label": "II", "aliases": ["II", "M2"] },
+      { "score": 3, "label": "III", "aliases": ["III", "M3"] },
+      { "score": 4, "label": "IV", "aliases": ["IV", "M4"] },
+      { "score": 5, "label": "V", "aliases": ["V", "M5"] },
+      { "score": 6, "label": "VI", "aliases": ["VI", "M6"] },
+      { "score": 7, "label": "VII", "aliases": ["VII", "M7"] },
+      { "score": 8, "label": "VIII", "aliases": ["VIII", "M8"] },
+      { "score": 9, "label": "IX", "aliases": ["IX", "M9"] },
+      { "score": 10, "label": "X", "aliases": ["X", "M10"] },
+      { "score": 11, "label": "XI", "aliases": ["XI", "M11"] },
+      { "score": 12, "label": "XII", "aliases": ["XII", "M12"] }
+    ]
+  },
+  "wi_ice": {
+    "label": "Water ice (WI)",
+    "entries": [
+      { "score": 1, "label": "WI1", "aliases": ["WI1", "WI 1"] },
+      { "score": 2, "label": "WI2", "aliases": ["WI2", "WI 2"] },
+      { "score": 3, "label": "WI3", "aliases": ["WI3", "WI 3"] },
+      { "score": 4, "label": "WI3+", "aliases": ["WI3+", "WI 3+"] },
+      { "score": 5, "label": "WI4", "aliases": ["WI4", "WI 4"] },
+      { "score": 6, "label": "WI4+", "aliases": ["WI4+", "WI 4+"] },
+      { "score": 7, "label": "WI5", "aliases": ["WI5", "WI 5"] },
+      { "score": 8, "label": "WI5+", "aliases": ["WI5+", "WI 5+"] },
+      { "score": 9, "label": "WI6", "aliases": ["WI6", "WI 6"] },
+      { "score": 10, "label": "WI6+", "aliases": ["WI6+", "WI 6+"] },
+      { "score": 11, "label": "WI7", "aliases": ["WI7", "WI 7"] }
+    ]
+  },
+  "alpine_overall": {
+    "label": "Alpine overall (IFAS)",
+    "entries": [
+      { "score": 1, "label": "F", "aliases": ["F", "FACILE"] },
+      { "score": 2, "label": "F+", "aliases": ["F+"] },
+      { "score": 3, "label": "PD-", "aliases": ["PD-"] },
+      { "score": 4, "label": "PD", "aliases": ["PD", "PEU DIFFICILE"] },
+      { "score": 5, "label": "PD+", "aliases": ["PD+"] },
+      { "score": 6, "label": "AD-", "aliases": ["AD-"] },
+      { "score": 7, "label": "AD", "aliases": ["AD", "ASSEZ DIFFICILE"] },
+      { "score": 8, "label": "AD+", "aliases": ["AD+"] },
+      { "score": 9, "label": "D-", "aliases": ["D-"] },
+      { "score": 10, "label": "D", "aliases": ["D", "DIFFICILE"] },
+      { "score": 11, "label": "D+", "aliases": ["D+"] },
+      { "score": 12, "label": "TD-", "aliases": ["TD-"] },
+      { "score": 13, "label": "TD", "aliases": ["TD", "TRES DIFFICILE", "TRÈS DIFFICILE"] },
+      { "score": 14, "label": "TD+", "aliases": ["TD+"] },
+      { "score": 15, "label": "ED-", "aliases": ["ED-"] },
+      { "score": 16, "label": "ED", "aliases": ["ED", "ED1", "EXTREMEMENT DIFFICILE", "EXTRÊMEMENT DIFFICILE"] },
+      { "score": 17, "label": "ED2", "aliases": ["ED2", "ED+"] },
+      { "score": 18, "label": "ED3", "aliases": ["ED3"] },
+      { "score": 19, "label": "ED4", "aliases": ["ED4"] },
+      { "score": 20, "label": "ABO", "aliases": ["ABO"] }
+    ]
+  },
+  "ski_touring_scale": {
+    "label": "Ski touring (SAC)",
+    "_note": "SAC alpine ski-tour scale (L…EX) with the equivalent French letters (F…ED/ABO) as aliases. Toponeige-style numeric ratings (e.g. '3.2') are not parsed yet — such entries show as ungraded.",
+    "entries": [
+      { "score": 1, "label": "L", "aliases": ["L", "F"] },
+      { "score": 2, "label": "WS-", "aliases": ["WS-", "PD-"] },
+      { "score": 3, "label": "WS", "aliases": ["WS", "PD"] },
+      { "score": 4, "label": "WS+", "aliases": ["WS+", "PD+"] },
+      { "score": 5, "label": "ZS-", "aliases": ["ZS-", "AD-"] },
+      { "score": 6, "label": "ZS", "aliases": ["ZS", "AD"] },
+      { "score": 7, "label": "ZS+", "aliases": ["ZS+", "AD+"] },
+      { "score": 8, "label": "S-", "aliases": ["S-", "D-"] },
+      { "score": 9, "label": "S", "aliases": ["S", "D"] },
+      { "score": 10, "label": "S+", "aliases": ["S+", "D+"] },
+      { "score": 11, "label": "SS-", "aliases": ["SS-", "TD-"] },
+      { "score": 12, "label": "SS", "aliases": ["SS", "TD"] },
+      { "score": 13, "label": "SS+", "aliases": ["SS+", "TD+"] },
+      { "score": 14, "label": "AS-", "aliases": ["AS-", "ED-"] },
+      { "score": 15, "label": "AS", "aliases": ["AS", "ED"] },
+      { "score": 16, "label": "AS+", "aliases": ["AS+", "ED+"] },
+      { "score": 17, "label": "EX", "aliases": ["EX", "ABO"] }
+    ]
+  },
+  "french_sport": {
+    "label": "French sport",
+    "_note": "STUB — no ladder yet; grades in this system show as ungraded. No BMG rule thresholds use it.",
+    "entries": []
+  },
+  "uiaa": {
+    "label": "UIAA",
+    "_note": "STUB — no ladder yet; grades in this system show as ungraded. No BMG rule thresholds use it.",
+    "entries": []
+  }
+}
