@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ClimbTable, type ClimbRow } from "./climb-table";
+import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 
 export default async function LogbookPage() {
@@ -26,6 +27,7 @@ export default async function LogbookPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 p-6">
+      <SiteNav current="/logbook" />
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Logbook</h1>
@@ -35,7 +37,12 @@ export default async function LogbookPage() {
               : `${rows.length} climb${rows.length === 1 ? "" : "s"} logged.`}
           </p>
         </div>
-        <Button render={<Link href="/logbook/new" />}>Log a climb</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" render={<Link href="/logbook/import" />}>
+            Import CSV
+          </Button>
+          <Button render={<Link href="/logbook/new" />}>Log a climb</Button>
+        </div>
       </div>
 
       {rows.length === 0 ? (

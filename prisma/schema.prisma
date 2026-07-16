@@ -75,6 +75,7 @@ model Area {
   disciplineTags Discipline[] @map("discipline_tags")
 
   climbs Climb[]
+  routes Route[]
 
   @@map("areas")
 }
@@ -117,11 +118,58 @@ model BmgRule {
   @@map("bmg_rules")
 }
 
+// Canonical route entry (manually added in Phase 3; external importers
+// populate the attribution fields from Phase 4).
+model Route {
+  id                   String       @id @default(uuid()) @db.Uuid
+  name                 String
+  areaId               String?      @map("area_id") @db.Uuid
+  area                 Area?        @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  discipline           Discipline
+  gradeSystem          GradeSystem? @map("grade_system")
+  gradeRaw             String?      @map("grade_raw")
+  gradeNormalisedScore Int?         @map("grade_normalised_score")
+  lat                  Float?
+  lng                  Float?
+  lengthM              Int?         @map("length_m")
+  pitches              Int?
+  description          String?
+  qualityRating        Int?         @map("quality_rating")
+  externalSource       String?      @map("external_source")
+  externalUrl          String?      @map("external_url")
+  externalId           String?      @map("external_id")
+  lastSyncedAt         DateTime?    @map("last_synced_at")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  climbs Climb[]
+
+  @@index([name])
+  @@index([externalSource, externalId])
+  @@map("routes")
+}
+
+// One row per importer run (Phase 4 sync jobs; manual CSV route imports).
+model RouteImportLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  source        String
+  runAt         DateTime @default(now()) @map("run_at")
+  routesAdded   Int      @default(0) @map("routes_added")
+  routesUpdated Int      @default(0) @map("routes_updated")
+  errorsJson    Json?    @map("errors_json")
+
+  @@map("route_import_logs")
+}
+
 // A single logged ascent.
 model Climb {
   id                   String       @id @default(uuid()) @db.Uuid
   userId               String       @map("user_id") @db.Uuid
   user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Optional link to a canonical Route; the free-text name stays the
+  // display fallback for unlinked climbs.
+  routeId              String?      @map("route_id") @db.Uuid
+  route                Route?       @relation(fields: [routeId], references: [id], onDelete: SetNull)
   freeTextRouteName    String       @map("free_text_route_name")
   discipline           Discipline
   date                 DateTime     @db.Date

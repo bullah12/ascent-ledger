@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { evaluateProgress, type CategoryProgress, type RuleProgress } from "@/lib/bmg/engine";
 import { signOut } from "./actions";
+import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,6 +118,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 p-6">
+      <SiteNav current="/dashboard" />
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">BMG progress</h1>
@@ -124,16 +126,11 @@ export default async function DashboardPage() {
             Your logbook scored against the BMG aspirant prerequisites.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" render={<Link href="/logbook" />}>
-            Logbook
+        <form action={signOut}>
+          <Button type="submit" variant="ghost">
+            Sign out
           </Button>
-          <form action={signOut}>
-            <Button type="submit" variant="ghost">
-              Sign out
-            </Button>
-          </form>
-        </div>
+        </form>
       </div>
 
       {categories.length === 0 ? (

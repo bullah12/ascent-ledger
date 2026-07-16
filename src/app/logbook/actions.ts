@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveAreaId } from "@/lib/areas";
 import { climbInputSchema, type ClimbInput } from "@/lib/climbs/validation";
 import { normaliseGrade } from "@/lib/grades";
 
@@ -24,6 +25,7 @@ function parseForm(formData: FormData):
     ascentStyle: formData.get("ascentStyle"),
     area: formData.get("area") ?? undefined,
     notes: formData.get("notes") ?? undefined,
+    routeId: formData.get("routeId") || undefined,
   });
 
   if (!result.success) {
@@ -40,33 +42,9 @@ function parseForm(formData: FormData):
   return { ok: true, input: result.data };
 }
 
-// Find-or-create an Area from the free-text area field (Phase 1: name only;
-// region/coords arrive in Phase 3). Returns null for a blank field.
-async function resolveAreaId(name: string | undefined): Promise<string | null> {
-  const trimmed = name?.trim();
-  if (!trimmed) return null;
-
-  const existing = await prisma.area.findFirst({
-    where: { name: { equals: trimmed, mode: "insensitive" } },
-  });
-  if (existing) return existing.id;
-
-  try {
-    const created = await prisma.area.create({ data: { name: trimmed } });
-    return created.id;
-  } catch {
-    // Lost a race on the unique(name) constraint — someone (or a parallel
-    // request) created it first. Re-read.
-    const raced = await prisma.area.findFirst({
-      where: { name: { equals: trimmed, mode: "insensitive" } },
-    });
-    if (raced) return raced.id;
-    throw new Error("Could not save the area");
-  }
-}
-
 function toClimbData(input: ClimbInput, areaId: string | null) {
   return {
+    routeId: input.routeId ?? null,
     freeTextRouteName: input.routeName,
     discipline: input.discipline,
     date: new Date(input.date),

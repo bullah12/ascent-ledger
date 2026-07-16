@@ -6,6 +6,7 @@ import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
 import { ascentStyleLabels, disciplineLabels } from "@/lib/climbs/labels";
 import { gradeSystemLabels, gradeSystemsByDiscipline } from "@/lib/grades";
 import type { ClimbFormState } from "./actions";
+import { RoutePicker, type LinkedRoute } from "./route-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,10 +36,12 @@ function FieldError({ message }: { message?: string }) {
 export function ClimbForm({
   action,
   defaultValues,
+  linkedRoute,
   submitLabel,
 }: {
   action: (prev: ClimbFormState, formData: FormData) => Promise<ClimbFormState>;
   defaultValues?: ClimbFormValues;
+  linkedRoute?: LinkedRoute | null;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -61,8 +64,18 @@ export function ClimbForm({
     }
   }
 
+  // Controlled so picking a route can prefill it; user edits still win.
+  const [routeName, setRouteName] = useState(defaultValues?.routeName ?? "");
+
+  function handleRouteSelect(route: LinkedRoute) {
+    if (!routeName.trim()) setRouteName(route.name);
+  }
+
   return (
     <form action={formAction} className="grid gap-4">
+      <RoutePicker initialRoute={linkedRoute} onSelect={handleRouteSelect} />
+      <FieldError message={errors.routeId} />
+
       <div className="grid gap-2">
         <Label htmlFor="routeName">Route name</Label>
         <Input
@@ -70,7 +83,8 @@ export function ClimbForm({
           name="routeName"
           required
           maxLength={200}
-          defaultValue={defaultValues?.routeName}
+          value={routeName}
+          onChange={(e) => setRouteName(e.target.value)}
           placeholder="e.g. Tower Ridge"
         />
         <FieldError message={errors.routeName} />
