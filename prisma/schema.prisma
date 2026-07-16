@@ -79,6 +79,44 @@ model Area {
   @@map("areas")
 }
 
+// BMG prerequisite category (one per discipline). Editable config, seeded
+// from docs/bmg_rules.seed.json via `npm run db:seed`.
+model BmgCategory {
+  id          String     @id @default(uuid()) @db.Uuid
+  key         Discipline @unique
+  label       String
+  description String?
+  sortOrder   Int        @default(0) @map("sort_order")
+
+  rules BmgRule[]
+
+  @@map("bmg_categories")
+}
+
+// Editable BMG rules table — thresholds live here, not in code, so a wrong
+// number is a data edit. `verified` mirrors the seed file's per-rule flag;
+// the dashboard surfaces unverified rules as such.
+model BmgRule {
+  id                      String       @id @default(uuid()) @db.Uuid
+  categoryId              String       @map("category_id") @db.Uuid
+  category                BmgCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  description             String
+  // Grade thresholds are ordinal scores *within one grade system* (see
+  // src/lib/grades). A rule with a threshold also pins the system it is
+  // expressed in, so a Scottish V (score 5) never matches a WI5 threshold.
+  gradeSystem             GradeSystem? @map("grade_system")
+  minGradeRaw             String?      @map("min_grade_raw")
+  minGradeNormalisedScore Int?         @map("min_grade_normalised_score")
+  minCount                Int          @map("min_count")
+  extraConstraintJson     Json?        @map("extra_constraint_json")
+  verified                Boolean      @default(false)
+  sourceNote              String?      @map("source_note")
+  sortOrder               Int          @default(0) @map("sort_order")
+
+  @@index([categoryId])
+  @@map("bmg_rules")
+}
+
 // A single logged ascent.
 model Climb {
   id                   String       @id @default(uuid()) @db.Uuid

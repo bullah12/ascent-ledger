@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { AscentStyle, Discipline } from "@/generated/prisma/enums";
+import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
 import { ascentStyleLabels, disciplineLabels } from "@/lib/climbs/labels";
+import { gradeSystemLabels, gradeSystemsByDiscipline } from "@/lib/grades";
 import type { ClimbFormState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ export type ClimbFormValues = {
   routeName: string;
   discipline: Discipline;
   date: string; // YYYY-MM-DD
+  gradeSystem: GradeSystem;
   gradeRaw: string;
   ascentStyle: AscentStyle;
   area: string;
@@ -42,6 +44,23 @@ export function ClimbForm({
   const [state, formAction, pending] = useActionState(action, {});
   const errors = state.fieldErrors ?? {};
 
+  // The grade-system choices follow the discipline (rock grades make no
+  // sense on a ski tour). Changing discipline resets the system to that
+  // discipline's default.
+  const [discipline, setDiscipline] = useState<Discipline>(
+    defaultValues?.discipline ?? Discipline.rock
+  );
+  const [gradeSystem, setGradeSystem] = useState<GradeSystem>(
+    defaultValues?.gradeSystem ?? gradeSystemsByDiscipline[discipline][0]
+  );
+
+  function handleDisciplineChange(next: Discipline) {
+    setDiscipline(next);
+    if (!gradeSystemsByDiscipline[next].includes(gradeSystem)) {
+      setGradeSystem(gradeSystemsByDiscipline[next][0]);
+    }
+  }
+
   return (
     <form action={formAction} className="grid gap-4">
       <div className="grid gap-2">
@@ -64,7 +83,8 @@ export function ClimbForm({
             id="discipline"
             name="discipline"
             required
-            defaultValue={defaultValues?.discipline ?? Discipline.rock}
+            value={discipline}
+            onChange={(e) => handleDisciplineChange(e.target.value as Discipline)}
           >
             {Object.values(Discipline).map((value) => (
               <option key={value} value={value}>
@@ -90,6 +110,24 @@ export function ClimbForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
+          <Label htmlFor="gradeSystem">Grade system</Label>
+          <NativeSelect
+            id="gradeSystem"
+            name="gradeSystem"
+            required
+            value={gradeSystem}
+            onChange={(e) => setGradeSystem(e.target.value as GradeSystem)}
+          >
+            {gradeSystemsByDiscipline[discipline].map((value) => (
+              <option key={value} value={value}>
+                {gradeSystemLabels[value]}
+              </option>
+            ))}
+          </NativeSelect>
+          <FieldError message={errors.gradeSystem} />
+        </div>
+
+        <div className="grid gap-2">
           <Label htmlFor="gradeRaw">Grade</Label>
           <Input
             id="gradeRaw"
@@ -101,7 +139,9 @@ export function ClimbForm({
           />
           <FieldError message={errors.gradeRaw} />
         </div>
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="ascentStyle">Ascent style</Label>
           <NativeSelect

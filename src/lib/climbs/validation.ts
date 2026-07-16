@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AscentStyle, Discipline } from "@/generated/prisma/enums";
+import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
 
 export const climbInputSchema = z.object({
   routeName: z
@@ -9,6 +9,7 @@ export const climbInputSchema = z.object({
     .max(200, "Route name is too long"),
   discipline: z.enum(Discipline, { error: "Pick a discipline" }),
   date: z.iso.date({ error: "Pick a date" }),
+  gradeSystem: z.enum(GradeSystem, { error: "Pick a grade system" }),
   gradeRaw: z
     .string()
     .trim()

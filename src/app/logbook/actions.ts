@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { climbInputSchema, type ClimbInput } from "@/lib/climbs/validation";
+import { normaliseGrade } from "@/lib/grades";
 
 export type ClimbFormState = {
   error?: string;
@@ -18,6 +19,7 @@ function parseForm(formData: FormData):
     routeName: formData.get("routeName"),
     discipline: formData.get("discipline"),
     date: formData.get("date"),
+    gradeSystem: formData.get("gradeSystem"),
     gradeRaw: formData.get("gradeRaw"),
     ascentStyle: formData.get("ascentStyle"),
     area: formData.get("area") ?? undefined,
@@ -68,7 +70,11 @@ function toClimbData(input: ClimbInput, areaId: string | null) {
     freeTextRouteName: input.routeName,
     discipline: input.discipline,
     date: new Date(input.date),
+    gradeSystem: input.gradeSystem,
     gradeRaw: input.gradeRaw,
+    // Null when the raw grade doesn't parse against the system's ladder —
+    // the climb still saves and shows as "ungraded" on the dashboard.
+    gradeNormalisedScore: normaliseGrade(input.gradeSystem, input.gradeRaw),
     ascentStyle: input.ascentStyle,
     areaId,
     notes: input.notes || null,
