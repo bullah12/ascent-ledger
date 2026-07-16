@@ -2,13 +2,14 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { disciplineLabels } from "@/lib/climbs/labels";
+import { getUserProgressAndSuggestions } from "@/lib/bmg/user-progress";
 import { SiteNav } from "@/components/site-nav";
-import { MapView, type ClimbFeature } from "./map-view";
+import { MapView, type ClimbFeature, type SuggestedFeature } from "./map-view";
 
 export default async function MapPage() {
   const user = await requireUser();
 
-  const [located, totalClimbs] = await Promise.all([
+  const [located, totalClimbs, { categorySuggestions }] = await Promise.all([
     prisma.climb.findMany({
       where: {
         userId: user.id,
@@ -26,6 +27,7 @@ export default async function MapPage() {
       orderBy: { date: "desc" },
     }),
     prisma.climb.count({ where: { userId: user.id } }),
+    getUserProgressAndSuggestions(prisma, user),
   ]);
 
   const features: ClimbFeature[] = located.map((climb) => ({
@@ -39,6 +41,28 @@ export default async function MapPage() {
     areaName: climb.route!.area?.name ?? null,
   }));
 
+  // Suggested routes across all unmet rules, deduped (a route can close
+  // more than one gap), keeping the discipline for the per-category toggle.
+  const suggestedById = new Map<string, SuggestedFeature>();
+  for (const category of categorySuggestions) {
+    for (const rule of category.rules) {
+      for (const s of rule.suggestions) {
+        if (s.lat === null || s.lng === null || suggestedById.has(s.routeId)) continue;
+        suggestedById.set(s.routeId, {
+          lat: s.lat,
+          lng: s.lng,
+          name: s.name,
+          gradeRaw: s.gradeRaw,
+          areaName: s.areaName,
+          category: category.categoryKey,
+          categoryLabel: disciplineLabels[category.categoryKey],
+          why: s.why,
+        });
+      }
+    }
+  }
+  const suggested = [...suggestedById.values()];
+
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 p-6">
       <SiteNav current="/map" />
@@ -51,7 +75,7 @@ export default async function MapPage() {
         </p>
       </div>
 
-      <MapView climbs={features} />
+      <MapView climbs={features} suggested={suggested} />
 
       {features.length < totalClimbs && (
         <p className="mt-3 text-xs text-muted-foreground">

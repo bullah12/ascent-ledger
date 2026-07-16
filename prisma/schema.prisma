@@ -56,6 +56,9 @@ model User {
   email       String   @unique
   displayName String?  @map("display_name")
   homeRegion  String?  @map("home_region")
+  // Recommender scoring weights (PLAN.md §6 w1–w4), editable in /settings;
+  // null = code defaults (see src/lib/recommender.ts).
+  recommenderWeightsJson Json? @map("recommender_weights_json")
   createdAt   DateTime @default(now()) @map("created_at")
 
   climbs Climb[]

@@ -6,6 +6,7 @@ const links = [
   { href: "/logbook", label: "Logbook" },
   { href: "/routes", label: "Routes" },
   { href: "/map", label: "Map" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function SiteNav({ current }: { current: (typeof links)[number]["href"] }) {

@@ -97,12 +97,14 @@ function tokensFor(regionName: string): string[] {
   return REGION_TOKENS[regionName.toLowerCase()] ?? [regionName.toLowerCase()];
 }
 
-// Lenient region check: only exclude a climb when its area actually carries
-// region/country data and none of it matches. Phase 1 areas are name-only,
-// so unknowns pass — the dashboard is a motivator, not an audit (the strict
-// data arrives with Phase 3 areas).
-function matchesRegions(climb: EngineClimb, allowed: string[]): boolean {
-  const area = climb.area;
+// Lenient region check: only exclude when the area actually carries
+// region/country data and none of it matches. Name-only areas (Phase 1
+// free text) pass — the dashboard is a motivator, not an audit. Also used
+// by the recommender to apply rule constraints to candidate routes.
+export function areaMatchesRegions(
+  area: { name: string; region: string | null; country: string | null } | null,
+  allowed: string[]
+): boolean {
   if (!area || (!area.region && !area.country)) return true;
   const haystack = [area.region, area.country, area.name]
     .filter(Boolean)
@@ -111,6 +113,10 @@ function matchesRegions(climb: EngineClimb, allowed: string[]): boolean {
   return allowed.some((name) =>
     tokensFor(name).some((token) => haystack.includes(token))
   );
+}
+
+function matchesRegions(climb: EngineClimb, allowed: string[]): boolean {
+  return areaMatchesRegions(climb.area, allowed);
 }
 
 /**
