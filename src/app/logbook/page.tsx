@@ -2,17 +2,46 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ClimbTable, type ClimbRow } from "./climb-table";
+import { LinkSuggestions, type SuggestionRow } from "./link-suggestions";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 
 export default async function LogbookPage() {
   const user = await requireUser();
 
-  const climbs = await prisma.climb.findMany({
-    where: { userId: user.id },
-    include: { area: { select: { name: true } } },
-    orderBy: { date: "desc" },
-  });
+  const [climbs, pendingSuggestions] = await Promise.all([
+    prisma.climb.findMany({
+      where: { userId: user.id },
+      include: { area: { select: { name: true } } },
+      orderBy: { date: "desc" },
+    }),
+    prisma.climbRouteSuggestion.findMany({
+      where: { status: "pending", climb: { userId: user.id } },
+      include: {
+        climb: { select: { freeTextRouteName: true, date: true } },
+        route: {
+          select: {
+            name: true,
+            gradeRaw: true,
+            externalUrl: true,
+            area: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { score: "desc" },
+      take: 20,
+    }),
+  ]);
+
+  const suggestionRows: SuggestionRow[] = pendingSuggestions.map((s) => ({
+    id: s.id,
+    climbName: s.climb.freeTextRouteName,
+    climbDate: s.climb.date.toISOString().slice(0, 10),
+    routeName: s.route.name,
+    routeGrade: s.route.gradeRaw,
+    routeArea: s.route.area?.name ?? null,
+    routeUrl: s.route.externalUrl,
+  }));
 
   const rows: ClimbRow[] = climbs.map((climb) => ({
     id: climb.id,
@@ -44,6 +73,8 @@ export default async function LogbookPage() {
           <Button render={<Link href="/logbook/new" />}>Log a climb</Button>
         </div>
       </div>
+
+      <LinkSuggestions suggestions={suggestionRows} />
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center">

@@ -142,11 +142,36 @@ model Route {
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
 
-  climbs Climb[]
+  climbs      Climb[]
+  suggestions ClimbRouteSuggestion[]
 
   @@index([name])
-  @@index([externalSource, externalId])
+  @@unique([externalSource, externalId])
   @@map("routes")
+}
+
+enum SuggestionStatus {
+  pending
+  accepted
+  rejected
+}
+
+// A fuzzy name+area match between a free-text Climb and an imported Route,
+// surfaced to the user to accept or reject — never auto-linked silently.
+// Rejected rows persist so the same suggestion doesn't reappear next sync.
+model ClimbRouteSuggestion {
+  id        String           @id @default(uuid()) @db.Uuid
+  climbId   String           @map("climb_id") @db.Uuid
+  climb     Climb            @relation(fields: [climbId], references: [id], onDelete: Cascade)
+  routeId   String           @map("route_id") @db.Uuid
+  route     Route            @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  score     Float
+  status    SuggestionStatus @default(pending)
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@unique([climbId, routeId])
+  @@index([status])
+  @@map("climb_route_suggestions")
 }
 
 // One row per importer run (Phase 4 sync jobs; manual CSV route imports).
@@ -188,6 +213,8 @@ model Climb {
   source               ClimbSource  @default(manual)
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  suggestions ClimbRouteSuggestion[]
 
   @@index([userId, date])
   @@map("climbs")

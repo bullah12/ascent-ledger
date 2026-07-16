@@ -107,6 +107,56 @@ export async function updateClimb(
   redirect("/logbook");
 }
 
+// Accept/reject a fuzzy climb→route link suggestion. Ownership is enforced
+// through the suggestion's climb.userId; accepting links the climb and
+// closes any other pending suggestions for it.
+export async function resolveSuggestion(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const suggestionId = formData.get("suggestionId");
+  const decision = formData.get("decision");
+  if (
+    typeof suggestionId !== "string" ||
+    (decision !== "accept" && decision !== "reject")
+  ) {
+    return;
+  }
+
+  const suggestion = await prisma.climbRouteSuggestion.findFirst({
+    where: { id: suggestionId, status: "pending", climb: { userId: user.id } },
+  });
+  if (!suggestion) return;
+
+  if (decision === "accept") {
+    await prisma.$transaction([
+      prisma.climb.update({
+        where: { id: suggestion.climbId },
+        data: { routeId: suggestion.routeId },
+      }),
+      prisma.climbRouteSuggestion.update({
+        where: { id: suggestion.id },
+        data: { status: "accepted" },
+      }),
+      // The climb is linked now — other pending candidates are moot.
+      prisma.climbRouteSuggestion.updateMany({
+        where: {
+          climbId: suggestion.climbId,
+          status: "pending",
+          id: { not: suggestion.id },
+        },
+        data: { status: "rejected" },
+      }),
+    ]);
+  } else {
+    await prisma.climbRouteSuggestion.update({
+      where: { id: suggestion.id },
+      data: { status: "rejected" },
+    });
+  }
+
+  revalidatePath("/logbook");
+  revalidatePath("/map");
+}
+
 export async function deleteClimb(formData: FormData): Promise<void> {
   const user = await requireUser();
   const climbId = formData.get("climbId");
