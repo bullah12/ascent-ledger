@@ -4,12 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { disciplineLabels } from "@/lib/climbs/labels";
 import { getUserProgressAndSuggestions } from "@/lib/bmg/user-progress";
 import { SiteNav } from "@/components/site-nav";
-import { MapView, type ClimbFeature, type SuggestedFeature } from "./map-view";
+import {
+  MapView,
+  type ClimbFeature,
+  type GpxTrack,
+  type SuggestedFeature,
+} from "./map-view";
 
 export default async function MapPage() {
   const user = await requireUser();
 
-  const [located, totalClimbs, { categorySuggestions }] = await Promise.all([
+  const [located, totalClimbs, { categorySuggestions }, gpxClimbs] = await Promise.all([
     prisma.climb.findMany({
       where: {
         userId: user.id,
@@ -28,7 +33,18 @@ export default async function MapPage() {
     }),
     prisma.climb.count({ where: { userId: user.id } }),
     getUserProgressAndSuggestions(prisma, user),
+    prisma.climb.findMany({
+      where: { userId: user.id, gpxTrackUrl: { not: null } },
+      select: { freeTextRouteName: true, gpxTrackUrl: true },
+      orderBy: { date: "desc" },
+      take: 20,
+    }),
   ]);
+
+  const tracks: GpxTrack[] = gpxClimbs.map((climb) => ({
+    url: climb.gpxTrackUrl!,
+    name: climb.freeTextRouteName,
+  }));
 
   const features: ClimbFeature[] = located.map((climb) => ({
     // The where clause guarantees route+coords exist; assert for TS.
@@ -64,7 +80,7 @@ export default async function MapPage() {
   const suggested = [...suggestedById.values()];
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 p-6">
+    <main className="mx-auto w-full max-w-5xl flex-1 p-4 sm:p-6">
       <SiteNav current="/map" />
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Map</h1>
@@ -75,7 +91,7 @@ export default async function MapPage() {
         </p>
       </div>
 
-      <MapView climbs={features} suggested={suggested} />
+      <MapView climbs={features} suggested={suggested} tracks={tracks} />
 
       {features.length < totalClimbs && (
         <p className="mt-3 text-xs text-muted-foreground">

@@ -49,7 +49,43 @@ export function ClimbTable({ climbs }: { climbs: ClimbRow[] }) {
   );
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <>
+      {/* Mobile: stacked cards (the 7-column table can't fit a phone). */}
+      <ul className="grid gap-2 sm:hidden">
+        {sorted.map((climb) => (
+          <li key={climb.id} className="rounded-lg border p-3">
+            <div className="flex items-start justify-between gap-2">
+              <Link
+                href={`/logbook/${climb.id}`}
+                className="min-w-0 font-medium hover:underline"
+              >
+                <span className="block truncate">{climb.routeName}</span>
+              </Link>
+              <Badge variant="secondary" className="shrink-0">
+                {disciplineLabels[climb.discipline]}
+              </Badge>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {climb.date} · {climb.gradeRaw} ·{" "}
+              {ascentStyleLabels[climb.ascentStyle]}
+              {climb.areaName ? ` · ${climb.areaName}` : ""}
+            </p>
+            <div className="mt-2 flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                render={<Link href={`/logbook/${climb.id}/edit`} />}
+              >
+                Edit
+              </Button>
+              <DeleteClimbButton climbId={climb.id} routeName={climb.routeName} />
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* Desktop/tablet: full table. */}
+      <div className="hidden overflow-x-auto rounded-lg border sm:block">
       <Table>
         <TableHeader>
           <TableRow>
@@ -87,9 +123,13 @@ export function ClimbTable({ climbs }: { climbs: ClimbRow[] }) {
             <TableRow key={climb.id}>
               <TableCell className="whitespace-nowrap">{climb.date}</TableCell>
               <TableCell className="max-w-56">
-                <div className="truncate font-medium" title={climb.routeName}>
+                <Link
+                  href={`/logbook/${climb.id}`}
+                  className="block truncate font-medium hover:underline"
+                  title={climb.routeName}
+                >
                   {climb.routeName}
-                </div>
+                </Link>
                 {climb.notes && (
                   <div
                     className="truncate text-xs text-muted-foreground"
@@ -132,7 +172,8 @@ export function ClimbTable({ climbs }: { climbs: ClimbRow[] }) {
           ))}
         </TableBody>
       </Table>
-    </div>
+      </div>
+    </>
   );
 }
 

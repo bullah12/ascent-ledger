@@ -37,11 +37,15 @@ export function ClimbForm({
   action,
   defaultValues,
   linkedRoute,
+  existingPhotos = [],
+  existingGpxUrl = null,
   submitLabel,
 }: {
   action: (prev: ClimbFormState, formData: FormData) => Promise<ClimbFormState>;
   defaultValues?: ClimbFormValues;
   linkedRoute?: LinkedRoute | null;
+  existingPhotos?: string[];
+  existingGpxUrl?: string | null;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -203,6 +207,60 @@ export function ClimbForm({
           placeholder="Conditions, partners, how it went…"
         />
         <FieldError message={errors.notes} />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="photos">
+          Photos{" "}
+          <span className="font-normal text-muted-foreground">
+            (optional, up to 8, 5 MB each)
+          </span>
+        </Label>
+        {existingPhotos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {existingPhotos.map((url) => (
+              <label
+                key={url}
+                className="group relative block cursor-pointer"
+                title="Tick to remove on save"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded Supabase Storage URL, not an optimisable static asset */}
+                <img
+                  src={url}
+                  alt="Climb photo"
+                  className="size-20 rounded-md border object-cover"
+                />
+                <span className="absolute right-1 top-1 rounded bg-background/80 px-1 text-xs">
+                  <input type="checkbox" name="removePhotos" value={url} />{" "}
+                  remove
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+        <Input id="photos" name="photos" type="file" accept="image/*" multiple />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="gpx">
+          GPX track{" "}
+          <span className="font-normal text-muted-foreground">(optional)</span>
+        </Label>
+        {existingGpxUrl && (
+          <p className="text-sm text-muted-foreground">
+            Current:{" "}
+            <a href={existingGpxUrl} className="underline" target="_blank" rel="noreferrer">
+              track.gpx
+            </a>{" "}
+            <label className="ml-2">
+              <input type="checkbox" name="removeGpx" /> remove
+            </label>
+          </p>
+        )}
+        <Input id="gpx" name="gpx" type="file" accept=".gpx,application/gpx+xml" />
+        <p className="text-xs text-muted-foreground">
+          Uploading a new file replaces the current track.
+        </p>
       </div>
 
       <FieldError message={state.error} />

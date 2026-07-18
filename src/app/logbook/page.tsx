@@ -55,9 +55,9 @@ export default async function LogbookPage() {
   }));
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 p-6">
+    <main className="mx-auto w-full max-w-5xl flex-1 p-4 sm:p-6">
       <SiteNav current="/logbook" />
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Logbook</h1>
           <p className="text-sm text-muted-foreground">

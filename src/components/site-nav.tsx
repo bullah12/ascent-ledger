@@ -11,7 +11,7 @@ const links = [
 
 export function SiteNav({ current }: { current: (typeof links)[number]["href"] }) {
   return (
-    <nav className="mb-6 flex gap-1 border-b pb-2 text-sm">
+    <nav className="mb-6 flex gap-1 overflow-x-auto whitespace-nowrap border-b pb-2 text-sm">
       {links.map(({ href, label }) => (
         <Link
           key={href}
