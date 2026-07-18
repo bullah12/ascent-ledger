@@ -1,0 +1,35 @@
+# Weekly route-database sync from open climbing-data APIs (PLAN.md §5).
+# Requires the DATABASE_URL repository secret (pooled Supabase URL is fine;
+# DIRECT_URL optional for migrate deploy).
+name: Sync routes
+
+on:
+  schedule:
+    - cron: "17 3 * * 1" # Mondays 03:17 UTC — off the whole-hour stampede
+  workflow_dispatch:
+    inputs:
+      max:
+        description: "Max routes per source"
+        default: "200"
+        required: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply pending migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      - name: Sync routes
+        run: npm run sync:routes -- --max=${{ github.event.inputs.max || '200' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

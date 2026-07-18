@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveAreaId } from "@/lib/areas";
 import { climbInputSchema, type ClimbInput } from "@/lib/climbs/validation";
 import { normaliseGrade } from "@/lib/grades";
 
@@ -24,6 +25,7 @@ function parseForm(formData: FormData):
     ascentStyle: formData.get("ascentStyle"),
     area: formData.get("area") ?? undefined,
     notes: formData.get("notes") ?? undefined,
+    routeId: formData.get("routeId") || undefined,
   });
 
   if (!result.success) {
@@ -40,33 +42,9 @@ function parseForm(formData: FormData):
   return { ok: true, input: result.data };
 }
 
-// Find-or-create an Area from the free-text area field (Phase 1: name only;
-// region/coords arrive in Phase 3). Returns null for a blank field.
-async function resolveAreaId(name: string | undefined): Promise<string | null> {
-  const trimmed = name?.trim();
-  if (!trimmed) return null;
-
-  const existing = await prisma.area.findFirst({
-    where: { name: { equals: trimmed, mode: "insensitive" } },
-  });
-  if (existing) return existing.id;
-
-  try {
-    const created = await prisma.area.create({ data: { name: trimmed } });
-    return created.id;
-  } catch {
-    // Lost a race on the unique(name) constraint — someone (or a parallel
-    // request) created it first. Re-read.
-    const raced = await prisma.area.findFirst({
-      where: { name: { equals: trimmed, mode: "insensitive" } },
-    });
-    if (raced) return raced.id;
-    throw new Error("Could not save the area");
-  }
-}
-
 function toClimbData(input: ClimbInput, areaId: string | null) {
   return {
+    routeId: input.routeId ?? null,
     freeTextRouteName: input.routeName,
     discipline: input.discipline,
     date: new Date(input.date),
@@ -127,6 +105,56 @@ export async function updateClimb(
 
   revalidatePath("/logbook");
   redirect("/logbook");
+}
+
+// Accept/reject a fuzzy climb→route link suggestion. Ownership is enforced
+// through the suggestion's climb.userId; accepting links the climb and
+// closes any other pending suggestions for it.
+export async function resolveSuggestion(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const suggestionId = formData.get("suggestionId");
+  const decision = formData.get("decision");
+  if (
+    typeof suggestionId !== "string" ||
+    (decision !== "accept" && decision !== "reject")
+  ) {
+    return;
+  }
+
+  const suggestion = await prisma.climbRouteSuggestion.findFirst({
+    where: { id: suggestionId, status: "pending", climb: { userId: user.id } },
+  });
+  if (!suggestion) return;
+
+  if (decision === "accept") {
+    await prisma.$transaction([
+      prisma.climb.update({
+        where: { id: suggestion.climbId },
+        data: { routeId: suggestion.routeId },
+      }),
+      prisma.climbRouteSuggestion.update({
+        where: { id: suggestion.id },
+        data: { status: "accepted" },
+      }),
+      // The climb is linked now — other pending candidates are moot.
+      prisma.climbRouteSuggestion.updateMany({
+        where: {
+          climbId: suggestion.climbId,
+          status: "pending",
+          id: { not: suggestion.id },
+        },
+        data: { status: "rejected" },
+      }),
+    ]);
+  } else {
+    await prisma.climbRouteSuggestion.update({
+      where: { id: suggestion.id },
+      data: { status: "rejected" },
+    });
+  }
+
+  revalidatePath("/logbook");
+  revalidatePath("/map");
 }
 
 export async function deleteClimb(formData: FormData): Promise<void> {

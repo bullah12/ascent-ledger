@@ -56,6 +56,9 @@ model User {
   email       String   @unique
   displayName String?  @map("display_name")
   homeRegion  String?  @map("home_region")
+  // Recommender scoring weights (PLAN.md §6 w1–w4), editable in /settings;
+  // null = code defaults (see src/lib/recommender.ts).
+  recommenderWeightsJson Json? @map("recommender_weights_json")
   createdAt   DateTime @default(now()) @map("created_at")
 
   climbs Climb[]
@@ -75,6 +78,7 @@ model Area {
   disciplineTags Discipline[] @map("discipline_tags")
 
   climbs Climb[]
+  routes Route[]
 
   @@map("areas")
 }
@@ -117,11 +121,83 @@ model BmgRule {
   @@map("bmg_rules")
 }
 
+// Canonical route entry (manually added in Phase 3; external importers
+// populate the attribution fields from Phase 4).
+model Route {
+  id                   String       @id @default(uuid()) @db.Uuid
+  name                 String
+  areaId               String?      @map("area_id") @db.Uuid
+  area                 Area?        @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  discipline           Discipline
+  gradeSystem          GradeSystem? @map("grade_system")
+  gradeRaw             String?      @map("grade_raw")
+  gradeNormalisedScore Int?         @map("grade_normalised_score")
+  lat                  Float?
+  lng                  Float?
+  lengthM              Int?         @map("length_m")
+  pitches              Int?
+  description          String?
+  qualityRating        Int?         @map("quality_rating")
+  externalSource       String?      @map("external_source")
+  externalUrl          String?      @map("external_url")
+  externalId           String?      @map("external_id")
+  lastSyncedAt         DateTime?    @map("last_synced_at")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  climbs      Climb[]
+  suggestions ClimbRouteSuggestion[]
+
+  @@index([name])
+  @@unique([externalSource, externalId])
+  @@map("routes")
+}
+
+enum SuggestionStatus {
+  pending
+  accepted
+  rejected
+}
+
+// A fuzzy name+area match between a free-text Climb and an imported Route,
+// surfaced to the user to accept or reject — never auto-linked silently.
+// Rejected rows persist so the same suggestion doesn't reappear next sync.
+model ClimbRouteSuggestion {
+  id        String           @id @default(uuid()) @db.Uuid
+  climbId   String           @map("climb_id") @db.Uuid
+  climb     Climb            @relation(fields: [climbId], references: [id], onDelete: Cascade)
+  routeId   String           @map("route_id") @db.Uuid
+  route     Route            @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  score     Float
+  status    SuggestionStatus @default(pending)
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@unique([climbId, routeId])
+  @@index([status])
+  @@map("climb_route_suggestions")
+}
+
+// One row per importer run (Phase 4 sync jobs; manual CSV route imports).
+model RouteImportLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  source        String
+  runAt         DateTime @default(now()) @map("run_at")
+  routesAdded   Int      @default(0) @map("routes_added")
+  routesUpdated Int      @default(0) @map("routes_updated")
+  errorsJson    Json?    @map("errors_json")
+
+  @@map("route_import_logs")
+}
+
 // A single logged ascent.
 model Climb {
   id                   String       @id @default(uuid()) @db.Uuid
   userId               String       @map("user_id") @db.Uuid
   user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Optional link to a canonical Route; the free-text name stays the
+  // display fallback for unlinked climbs.
+  routeId              String?      @map("route_id") @db.Uuid
+  route                Route?       @relation(fields: [routeId], references: [id], onDelete: SetNull)
   freeTextRouteName    String       @map("free_text_route_name")
   discipline           Discipline
   date                 DateTime     @db.Date
@@ -140,6 +216,8 @@ model Climb {
   source               ClimbSource  @default(manual)
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  suggestions ClimbRouteSuggestion[]
 
   @@index([userId, date])
   @@map("climbs")

@@ -47,18 +47,19 @@
   },
   "wi_ice": {
     "label": "Water ice (WI)",
+    "_note": "Bare-number aliases ('4+') cover sources that omit the WI prefix, e.g. Camptocamp ice_rating.",
     "entries": [
-      { "score": 1, "label": "WI1", "aliases": ["WI1", "WI 1"] },
-      { "score": 2, "label": "WI2", "aliases": ["WI2", "WI 2"] },
-      { "score": 3, "label": "WI3", "aliases": ["WI3", "WI 3"] },
-      { "score": 4, "label": "WI3+", "aliases": ["WI3+", "WI 3+"] },
-      { "score": 5, "label": "WI4", "aliases": ["WI4", "WI 4"] },
-      { "score": 6, "label": "WI4+", "aliases": ["WI4+", "WI 4+"] },
-      { "score": 7, "label": "WI5", "aliases": ["WI5", "WI 5"] },
-      { "score": 8, "label": "WI5+", "aliases": ["WI5+", "WI 5+"] },
-      { "score": 9, "label": "WI6", "aliases": ["WI6", "WI 6"] },
-      { "score": 10, "label": "WI6+", "aliases": ["WI6+", "WI 6+"] },
-      { "score": 11, "label": "WI7", "aliases": ["WI7", "WI 7"] }
+      { "score": 1, "label": "WI1", "aliases": ["WI1", "WI 1", "1"] },
+      { "score": 2, "label": "WI2", "aliases": ["WI2", "WI 2", "2"] },
+      { "score": 3, "label": "WI3", "aliases": ["WI3", "WI 3", "3"] },
+      { "score": 4, "label": "WI3+", "aliases": ["WI3+", "WI 3+", "3+"] },
+      { "score": 5, "label": "WI4", "aliases": ["WI4", "WI 4", "4"] },
+      { "score": 6, "label": "WI4+", "aliases": ["WI4+", "WI 4+", "4+"] },
+      { "score": 7, "label": "WI5", "aliases": ["WI5", "WI 5", "5"] },
+      { "score": 8, "label": "WI5+", "aliases": ["WI5+", "WI 5+", "5+"] },
+      { "score": 9, "label": "WI6", "aliases": ["WI6", "WI 6", "6"] },
+      { "score": 10, "label": "WI6+", "aliases": ["WI6+", "WI 6+", "6+"] },
+      { "score": 11, "label": "WI7", "aliases": ["WI7", "WI 7", "7"] }
     ]
   },
   "alpine_overall": {

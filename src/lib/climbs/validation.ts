@@ -18,6 +18,8 @@ export const climbInputSchema = z.object({
   ascentStyle: z.enum(AscentStyle, { error: "Pick an ascent style" }),
   area: z.string().trim().max(120, "Area name is too long").optional(),
   notes: z.string().trim().max(2000, "Notes are too long").optional(),
+  // Optional link to a canonical Route (Phase 3); climbs may stay free-text.
+  routeId: z.uuid({ error: "Invalid route" }).optional(),
 });
 
 export type ClimbInput = z.infer<typeof climbInputSchema>;

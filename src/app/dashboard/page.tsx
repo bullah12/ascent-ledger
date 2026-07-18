@@ -2,8 +2,11 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { evaluateProgress, type CategoryProgress, type RuleProgress } from "@/lib/bmg/engine";
+import type { CategoryProgress, RuleProgress } from "@/lib/bmg/engine";
+import { getUserProgressAndSuggestions } from "@/lib/bmg/user-progress";
+import type { RouteSuggestion } from "@/lib/recommender";
 import { signOut } from "./actions";
+import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +17,42 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
-function RuleRow({ rule }: { rule: RuleProgress }) {
+function SuggestedRoutes({ suggestions }: { suggestions: RouteSuggestion[] }) {
+  if (suggestions.length === 0) return null;
+  return (
+    <div className="mt-3 rounded-md border bg-muted/30 p-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Suggested routes
+      </p>
+      <ul className="space-y-1.5">
+        {suggestions.map((s) => (
+          <li key={s.routeId} className="text-sm">
+            {s.externalUrl ? (
+              <a href={s.externalUrl} target="_blank" rel="noreferrer" className="font-medium underline">
+                {s.name}
+              </a>
+            ) : (
+              <span className="font-medium">{s.name}</span>
+            )}
+            <span className="text-muted-foreground">
+              {s.gradeRaw ? ` · ${s.gradeRaw}` : ""}
+              {s.areaName ? ` · ${s.areaName}` : ""}
+            </span>
+            <span className="block text-xs text-muted-foreground">{s.why}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function RuleRow({
+  rule,
+  suggestions,
+}: {
+  rule: RuleProgress;
+  suggestions: RouteSuggestion[];
+}) {
   return (
     <div className="border-t px-6 py-4">
       <div className="mb-2 flex items-start justify-between gap-3">
@@ -44,11 +82,18 @@ function RuleRow({ rule }: { rule: RuleProgress }) {
             : "Count met — see notes"}
         {rule.notes.length > 0 && <> · {rule.notes.join(" · ")}</>}
       </p>
+      <SuggestedRoutes suggestions={suggestions} />
     </div>
   );
 }
 
-function CategoryCard({ category }: { category: CategoryProgress }) {
+function CategoryCard({
+  category,
+  suggestionsByRule,
+}: {
+  category: CategoryProgress;
+  suggestionsByRule: Map<string, RouteSuggestion[]>;
+}) {
   return (
     <Card className="gap-0 overflow-hidden py-0">
       <details className="group">
@@ -81,7 +126,11 @@ function CategoryCard({ category }: { category: CategoryProgress }) {
         </summary>
         <div className="pb-2">
           {category.rules.map((rule) => (
-            <RuleRow key={rule.id} rule={rule} />
+            <RuleRow
+              key={rule.id}
+              rule={rule}
+              suggestions={suggestionsByRule.get(rule.id) ?? []}
+            />
           ))}
         </div>
       </details>
@@ -92,31 +141,17 @@ function CategoryCard({ category }: { category: CategoryProgress }) {
 export default async function DashboardPage() {
   const user = await requireUser();
 
-  const [categories, climbs] = await Promise.all([
-    prisma.bmgCategory.findMany({
-      orderBy: { sortOrder: "asc" },
-      include: { rules: { orderBy: { sortOrder: "asc" } } },
-    }),
-    prisma.climb.findMany({
-      where: { userId: user.id },
-      select: {
-        id: true,
-        discipline: true,
-        date: true,
-        ascentStyle: true,
-        gradeSystem: true,
-        gradeRaw: true,
-        gradeNormalisedScore: true,
-        area: { select: { id: true, name: true, region: true, country: true } },
-      },
-    }),
-  ]);
-
-  const progress = evaluateProgress(categories, climbs);
-  const hasUnverified = categories.some((c) => c.rules.some((r) => !r.verified));
+  const { hasRules, progress, hasUnverified, categorySuggestions } =
+    await getUserProgressAndSuggestions(prisma, user);
+  const suggestionsByRule = new Map(
+    categorySuggestions.flatMap((c) =>
+      c.rules.map((r) => [r.ruleId, r.suggestions] as const)
+    )
+  );
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 p-6">
+      <SiteNav current="/dashboard" />
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">BMG progress</h1>
@@ -124,19 +159,14 @@ export default async function DashboardPage() {
             Your logbook scored against the BMG aspirant prerequisites.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" render={<Link href="/logbook" />}>
-            Logbook
+        <form action={signOut}>
+          <Button type="submit" variant="ghost">
+            Sign out
           </Button>
-          <form action={signOut}>
-            <Button type="submit" variant="ghost">
-              Sign out
-            </Button>
-          </form>
-        </div>
+        </form>
       </div>
 
-      {categories.length === 0 ? (
+      {!hasRules ? (
         <Card>
           <CardHeader>
             <CardTitle>No BMG rules loaded</CardTitle>
@@ -151,7 +181,11 @@ export default async function DashboardPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             {progress.map((category) => (
-              <CategoryCard key={category.id} category={category} />
+              <CategoryCard
+                key={category.id}
+                category={category}
+                suggestionsByRule={suggestionsByRule}
+              />
             ))}
           </div>
           {hasUnverified && (

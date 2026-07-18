@@ -15,7 +15,18 @@ export default async function EditClimbPage({
 
   const climb = await prisma.climb.findFirst({
     where: { id, userId: user.id },
-    include: { area: { select: { name: true } } },
+    include: {
+      area: { select: { name: true } },
+      route: {
+        select: {
+          id: true,
+          name: true,
+          discipline: true,
+          gradeRaw: true,
+          area: { select: { name: true } },
+        },
+      },
+    },
   });
 
   if (!climb) {
@@ -30,6 +41,17 @@ export default async function EditClimbPage({
       <ClimbForm
         action={boundUpdate}
         submitLabel="Save changes"
+        linkedRoute={
+          climb.route
+            ? {
+                id: climb.route.id,
+                name: climb.route.name,
+                discipline: climb.route.discipline,
+                gradeRaw: climb.route.gradeRaw,
+                areaName: climb.route.area?.name ?? null,
+              }
+            : null
+        }
         defaultValues={{
           routeName: climb.freeTextRouteName,
           discipline: climb.discipline,
