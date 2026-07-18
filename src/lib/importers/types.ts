@@ -8,8 +8,9 @@ import type { Discipline, GradeSystem } from "@/generated/prisma/enums";
 export type ExternalRoute = {
   /** Stable id within the source; upsert key is (source, externalId). */
   externalId: string;
-  /** Public page for attribution/deep-linking (PLAN.md §5 point 3). */
-  externalUrl: string;
+  /** Public page for attribution/deep-linking (PLAN.md §5 point 3);
+   *  null for hand-curated data with no source page. */
+  externalUrl: string | null;
   name: string;
   discipline: Discipline;
   gradeSystem: GradeSystem | null;

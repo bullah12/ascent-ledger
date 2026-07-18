@@ -4,41 +4,60 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { runSync } from "../src/lib/importers/sync";
 import { openBetaImporter } from "../src/lib/importers/openbeta";
 import { camptocampImporter } from "../src/lib/importers/camptocamp";
+import { manualCsvImporter } from "../src/lib/importers/manual-csv";
 import type { RouteImporter } from "../src/lib/importers/types";
 
 // Route-database sync — run manually (`npm run sync:routes`) or on the
 // weekly GitHub Actions cron (.github/workflows/sync-routes.yml).
 //
 //   npm run sync:routes -- --source=openbeta,camptocamp --max=200
+//   npm run sync:routes -- --file=docs/scottish_winter_seed.csv
 //
-//   --source  comma-separated subset of sources (default: all)
+//   --source  comma-separated subset of API sources (default: all)
 //   --max     max routes fetched per source per run (default: 200 — keep
 //             this modest; the job is weekly and APIs are shared goods)
+//   --file    seed/refresh curated routes from a CSV (see
+//             src/lib/importers/manual-csv.ts for the format). When given,
+//             ONLY the CSV is imported unless --source is also passed.
 
 const REGISTRY: RouteImporter[] = [openBetaImporter, camptocampImporter];
 
-function parseArgs(argv: string[]): { sources: string[]; max: number } {
-  let sources = REGISTRY.map((i) => i.source);
+function parseArgs(argv: string[]): {
+  sources: string[] | null;
+  max: number;
+  file: string | null;
+} {
+  let sources: string[] | null = null;
   let max = 200;
+  let file: string | null = null;
   for (const arg of argv) {
     const sourceMatch = arg.match(/^--source=(.+)$/);
     if (sourceMatch) sources = sourceMatch[1].split(",").map((s) => s.trim());
     const maxMatch = arg.match(/^--max=(\d+)$/);
     if (maxMatch) max = Number(maxMatch[1]);
+    const fileMatch = arg.match(/^--file=(.+)$/);
+    if (fileMatch) file = fileMatch[1];
   }
-  return { sources, max };
+  return { sources, max, file };
 }
 
 async function main() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is not set");
   }
-  const { sources, max } = parseArgs(process.argv.slice(2));
-  const importers = REGISTRY.filter((i) => sources.includes(i.source));
-  if (importers.length === 0) {
-    throw new Error(
-      `No matching importers for --source=${sources.join(",")} (available: ${REGISTRY.map((i) => i.source).join(", ")})`
-    );
+  const { sources, max, file } = parseArgs(process.argv.slice(2));
+  const importers: RouteImporter[] = [];
+  if (sources !== null || file === null) {
+    const wanted = sources ?? REGISTRY.map((i) => i.source);
+    importers.push(...REGISTRY.filter((i) => wanted.includes(i.source)));
+    if (importers.length === 0) {
+      throw new Error(
+        `No matching importers for --source=${wanted.join(",")} (available: ${REGISTRY.map((i) => i.source).join(", ")})`
+      );
+    }
+  }
+  if (file !== null) {
+    importers.push(manualCsvImporter(file));
   }
 
   const prisma = new PrismaClient({

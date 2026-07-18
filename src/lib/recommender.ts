@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { Discipline, GradeSystem } from "@/generated/prisma/enums";
 import {
-  areaMatchesRegions,
+  areaMatchesRegionsStrict,
   effectiveGrade,
   type EngineClimb,
 } from "@/lib/bmg/engine";
@@ -166,7 +166,9 @@ function recommendForRule(
     if (route.discipline !== discipline) continue;
     if (context.loggedRouteIds.has(route.id)) continue;
     if (context.loggedNames.has(normaliseText(route.name))) continue;
-    if (regionList && !areaMatchesRegions(route.area, regionList)) continue;
+    // Strict here (unlike the dashboard's lenient check on logged climbs):
+    // never *suggest* a route that can't be placed in the rule's region.
+    if (regionList && !areaMatchesRegionsStrict(route.area, regionList)) continue;
 
     // Grade window filter — only applicable when we have an anchor and the
     // route is graded in the rule's system.
@@ -177,6 +179,17 @@ function recommendForRule(
       }
       const s = route.gradeNormalisedScore;
       if (s < anchor - GRADE_WINDOW_BELOW || s > anchor + GRADE_WINDOW_ABOVE) {
+        continue;
+      }
+      // When the rule's own threshold is reachable inside the window,
+      // don't suggest routes below it — they can never count toward this
+      // rule. When the threshold is still above the window (e.g. TD rule,
+      // current max AD+), keep the §6 stepping-stone behaviour.
+      if (
+        rule.minGradeNormalisedScore !== null &&
+        rule.minGradeNormalisedScore <= anchor + GRADE_WINDOW_ABOVE &&
+        s < rule.minGradeNormalisedScore
+      ) {
         continue;
       }
       // Best fit = one step above current max ("next logical grade").

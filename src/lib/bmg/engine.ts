@@ -119,6 +119,25 @@ function matchesRegions(climb: EngineClimb, allowed: string[]): boolean {
   return areaMatchesRegions(climb.area, allowed);
 }
 
+// Strict variant for the recommender: a *suggested* route must positively
+// match the rule's region — an unknown location is grounds for exclusion
+// there (recommending a route on the wrong continent is worse than
+// recommending nothing), while the lenient check above stays right for
+// scoring the user's own logged climbs.
+export function areaMatchesRegionsStrict(
+  area: { name: string; region: string | null; country: string | null } | null,
+  allowed: string[]
+): boolean {
+  if (!area) return false;
+  const haystack = [area.name, area.region, area.country]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return allowed.some((name) =>
+    tokensFor(name).some((token) => haystack.includes(token))
+  );
+}
+
 /**
  * Effective grade of a climb: the stored system+score when present,
  * otherwise a best-effort parse (covers Phase 1 rows logged before the
