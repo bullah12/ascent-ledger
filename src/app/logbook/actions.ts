@@ -5,6 +5,15 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveAreaId } from "@/lib/areas";
+import { createClient } from "@/lib/supabase/server";
+import {
+  GPX_BUCKET,
+  MAX_PHOTOS_PER_CLIMB,
+  PHOTOS_BUCKET,
+  removeStoredFiles,
+  uploadClimbPhoto,
+  uploadGpxTrack,
+} from "@/lib/storage";
 import { climbInputSchema, type ClimbInput } from "@/lib/climbs/validation";
 import { normaliseGrade } from "@/lib/grades";
 
@@ -59,6 +68,47 @@ function toClimbData(input: ClimbInput, areaId: string | null) {
   };
 }
 
+// Uploads the form's new photo files (input name "photos") and optional
+// GPX file, returning URLs — or a user-facing error string.
+async function uploadAttachments(
+  userId: string,
+  formData: FormData,
+  existingPhotoCount: number
+): Promise<
+  | { ok: true; photoUrls: string[]; gpxUrl: string | null }
+  | { ok: false; error: string }
+> {
+  const photoFiles = formData
+    .getAll("photos")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  const gpxFile = formData.get("gpx");
+  const newGpx = gpxFile instanceof File && gpxFile.size > 0 ? gpxFile : null;
+
+  if (existingPhotoCount + photoFiles.length > MAX_PHOTOS_PER_CLIMB) {
+    return { ok: false, error: `A climb can have at most ${MAX_PHOTOS_PER_CLIMB} photos.` };
+  }
+  if (photoFiles.length === 0 && !newGpx) {
+    return { ok: true, photoUrls: [], gpxUrl: null };
+  }
+
+  const supabase = await createClient();
+  const photoUrls: string[] = [];
+  for (const file of photoFiles) {
+    const result = await uploadClimbPhoto(supabase, userId, file);
+    if (!result.ok) return { ok: false, error: result.error };
+    photoUrls.push(result.url);
+  }
+
+  let gpxUrl: string | null = null;
+  if (newGpx) {
+    const result = await uploadGpxTrack(supabase, userId, newGpx);
+    if (!result.ok) return { ok: false, error: result.error };
+    gpxUrl = result.url;
+  }
+
+  return { ok: true, photoUrls, gpxUrl };
+}
+
 export async function createClimb(
   _prev: ClimbFormState,
   formData: FormData
@@ -67,10 +117,18 @@ export async function createClimb(
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
 
+  const uploaded = await uploadAttachments(user.id, formData, 0);
+  if (!uploaded.ok) return { error: uploaded.error };
+
   try {
     const areaId = await resolveAreaId(parsed.input.area);
     await prisma.climb.create({
-      data: { userId: user.id, ...toClimbData(parsed.input, areaId) },
+      data: {
+        userId: user.id,
+        ...toClimbData(parsed.input, areaId),
+        photoUrls: uploaded.photoUrls,
+        gpxTrackUrl: uploaded.gpxUrl,
+      },
     });
   } catch {
     return { error: "Could not save the climb. Please try again." };
@@ -89,18 +147,48 @@ export async function updateClimb(
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
 
+  // Ownership check up front — attachment handling needs the current row.
+  const existing = await prisma.climb.findFirst({
+    where: { id: climbId, userId: user.id },
+    select: { photoUrls: true, gpxTrackUrl: true },
+  });
+  if (!existing) {
+    return { error: "This climb no longer exists." };
+  }
+
+  const removePhotos = new Set(
+    formData.getAll("removePhotos").filter((v): v is string => typeof v === "string")
+  );
+  const keptPhotos = existing.photoUrls.filter((url) => !removePhotos.has(url));
+  const removeGpx = formData.get("removeGpx") === "on";
+
+  const uploaded = await uploadAttachments(user.id, formData, keptPhotos.length);
+  if (!uploaded.ok) return { error: uploaded.error };
+
+  const gpxTrackUrl =
+    uploaded.gpxUrl ?? (removeGpx ? null : existing.gpxTrackUrl);
+
   try {
     const areaId = await resolveAreaId(parsed.input.area);
-    // updateMany so the WHERE clause enforces ownership in the same query.
-    const { count } = await prisma.climb.updateMany({
-      where: { id: climbId, userId: user.id },
-      data: toClimbData(parsed.input, areaId),
+    await prisma.climb.update({
+      where: { id: climbId },
+      data: {
+        ...toClimbData(parsed.input, areaId),
+        photoUrls: [...keptPhotos, ...uploaded.photoUrls],
+        gpxTrackUrl,
+      },
     });
-    if (count === 0) {
-      return { error: "This climb no longer exists." };
-    }
   } catch {
     return { error: "Could not save the climb. Please try again." };
+  }
+
+  // Best-effort cleanup of files the save just detached.
+  const supabase = await createClient();
+  if (removePhotos.size > 0) {
+    await removeStoredFiles(supabase, PHOTOS_BUCKET, [...removePhotos]);
+  }
+  if (existing.gpxTrackUrl && gpxTrackUrl !== existing.gpxTrackUrl) {
+    await removeStoredFiles(supabase, GPX_BUCKET, [existing.gpxTrackUrl]);
   }
 
   revalidatePath("/logbook");

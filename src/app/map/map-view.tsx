@@ -25,9 +25,28 @@ export type SuggestedFeature = {
   why: string;
 };
 
+export type GpxTrack = {
+  url: string;
+  name: string;
+};
+
 const CLIMBS_SOURCE = "climbs";
 const SUGGESTED_SOURCE = "suggested";
 const SUGGESTED_COLOR = "#d97706"; // amber — distinct from the teal climbs
+const TRACK_COLOR = "#7c3aed"; // violet — GPX tracks
+const MAX_TRACKS = 20;
+
+// Minimal GPX parse: every <trkpt>/<rtept> lat/lon in document order.
+function parseGpx(xml: string): [number, number][] {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const points: [number, number][] = [];
+  for (const pt of doc.querySelectorAll("trkpt, rtept")) {
+    const lat = Number(pt.getAttribute("lat"));
+    const lon = Number(pt.getAttribute("lon"));
+    if (Number.isFinite(lat) && Number.isFinite(lon)) points.push([lon, lat]);
+  }
+  return points;
+}
 
 function suggestedFilter(enabled: string[]): maplibregl.FilterSpecification {
   return ["in", ["get", "category"], ["literal", enabled]];
@@ -36,9 +55,11 @@ function suggestedFilter(enabled: string[]): maplibregl.FilterSpecification {
 export function MapView({
   climbs,
   suggested,
+  tracks = [],
 }: {
   climbs: ClimbFeature[];
   suggested: SuggestedFeature[];
+  tracks?: GpxTrack[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -236,6 +257,41 @@ export function MapView({
         });
       }
 
+      // GPX tracks load lazily after the map is up; a failed fetch just
+      // means that track doesn't draw.
+      void (async () => {
+        for (const track of tracks.slice(0, MAX_TRACKS)) {
+          try {
+            const response = await fetch(track.url);
+            if (!response.ok) continue;
+            const points = parseGpx(await response.text());
+            if (points.length < 2 || mapRef.current !== map) continue;
+            const sourceId = `gpx-${track.url}`;
+            if (map.getSource(sourceId)) continue;
+            map.addSource(sourceId, {
+              type: "geojson",
+              data: {
+                type: "Feature",
+                geometry: { type: "LineString", coordinates: points },
+                properties: { name: track.name },
+              },
+            });
+            map.addLayer({
+              id: sourceId,
+              type: "line",
+              source: sourceId,
+              paint: {
+                "line-color": TRACK_COLOR,
+                "line-width": 3,
+                "line-opacity": 0.8,
+              },
+            });
+          } catch {
+            // Unreachable track file — skip it.
+          }
+        }
+      })();
+
       if (climbs.length > 0 || suggested.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
         for (const climb of climbs) bounds.extend([climb.lng, climb.lat]);
@@ -248,7 +304,7 @@ export function MapView({
       mapRef.current = null;
       map.remove();
     };
-  }, [climbs, suggested]);
+  }, [climbs, suggested, tracks]);
 
   // Per-category visibility for suggested markers.
   useEffect(() => {
@@ -267,25 +323,38 @@ export function MapView({
 
   return (
     <div className="grid gap-2">
-      {categories.length > 0 && (
+      {(categories.length > 0 || tracks.length > 0) && (
         <div className="flex flex-wrap items-center gap-4 text-sm">
-          <span className="text-muted-foreground">
-            <span
-              className="mr-1 inline-block size-2.5 rounded-full align-middle"
-              style={{ backgroundColor: SUGGESTED_COLOR }}
-            />
-            Suggested routes:
-          </span>
-          {categories.map(([key, label]) => (
-            <label key={key} className="flex cursor-pointer items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={enabled.includes(key)}
-                onChange={() => toggle(key)}
+          {tracks.length > 0 && (
+            <span className="text-muted-foreground">
+              <span
+                className="mr-1 inline-block h-1 w-4 rounded align-middle"
+                style={{ backgroundColor: TRACK_COLOR }}
               />
-              {label}
-            </label>
-          ))}
+              GPX tracks
+            </span>
+          )}
+          {categories.length > 0 && (
+            <>
+              <span className="text-muted-foreground">
+                <span
+                  className="mr-1 inline-block size-2.5 rounded-full align-middle"
+                  style={{ backgroundColor: SUGGESTED_COLOR }}
+                />
+                Suggested routes:
+              </span>
+              {categories.map(([key, label]) => (
+                <label key={key} className="flex cursor-pointer items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={enabled.includes(key)}
+                    onChange={() => toggle(key)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </>
+          )}
         </div>
       )}
       <div ref={containerRef} className="h-[70vh] w-full rounded-lg border" />

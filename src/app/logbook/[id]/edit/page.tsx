@@ -36,11 +36,13 @@ export default async function EditClimbPage({
   const boundUpdate = updateClimb.bind(null, climb.id);
 
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 p-6">
+    <main className="mx-auto w-full max-w-xl flex-1 p-4 sm:p-6">
       <h1 className="mb-6 text-2xl font-bold tracking-tight">Edit climb</h1>
       <ClimbForm
         action={boundUpdate}
         submitLabel="Save changes"
+        existingPhotos={climb.photoUrls}
+        existingGpxUrl={climb.gpxTrackUrl}
         linkedRoute={
           climb.route
             ? {
