@@ -4,6 +4,12 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { runSync } from "../src/lib/importers/sync";
 import { openBetaImporter } from "../src/lib/importers/openbeta";
 import { camptocampImporter } from "../src/lib/importers/camptocamp";
+import { osmOverpassImporter } from "../src/lib/importers/osm-overpass";
+import {
+  nationalTrailsEnglandImporter,
+  nationalTrailsWalesImporter,
+} from "../src/lib/importers/uk-national-trails";
+import { natureScotGreatTrailsImporter } from "../src/lib/importers/scotlands-great-trails";
 import type { RouteImporter } from "../src/lib/importers/types";
 
 // Route-database sync — run manually (`npm run sync:routes`) or on the
@@ -15,7 +21,14 @@ import type { RouteImporter } from "../src/lib/importers/types";
 //   --max     max routes fetched per source per run (default: 200 — keep
 //             this modest; the job is weekly and APIs are shared goods)
 
-const REGISTRY: RouteImporter[] = [openBetaImporter, camptocampImporter];
+const REGISTRY: RouteImporter[] = [
+  openBetaImporter,
+  camptocampImporter,
+  osmOverpassImporter,
+  nationalTrailsEnglandImporter,
+  nationalTrailsWalesImporter,
+  natureScotGreatTrailsImporter,
+];
 
 function parseArgs(argv: string[]): { sources: string[]; max: number } {
   let sources = REGISTRY.map((i) => i.source);

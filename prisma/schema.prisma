@@ -1,10 +1,6 @@
 // Ascent Ledger — Prisma schema
 //
-// Phase 1: User, Climb, Area per docs/PLAN.md §3. Notes:
-// - grade_normalised_score / grade_system are nullable and unused until the
-//   grade engine lands (Phase 2); grades are stored as free text (grade_raw).
-// - No Route model yet (Phase 3), so Climb has no route_id — the route is
-//   free_text_route_name only.
+// Forward-evolved product schema; migrations remain the data-safe history.
 //
 // Connection URLs live in prisma.config.ts (Prisma 7+), sourced from the
 // DATABASE_URL environment variable — never hardcoded here.
@@ -24,6 +20,7 @@ enum Discipline {
   winter
   alpine
   ski_touring
+  hiking
 
   @@schema("ascent_ledger")
 }
@@ -36,6 +33,7 @@ enum GradeSystem {
   wi_ice
   alpine_overall
   ski_touring_scale
+  sac_hiking
 
   @@schema("ascent_ledger")
 }
@@ -70,14 +68,14 @@ enum PathSource {
 // Mirrors the Supabase Auth user; id is the Supabase auth.users UUID.
 // Upserted on first authenticated visit to the logbook.
 model User {
-  id          String   @id @db.Uuid
-  email       String   @unique
-  displayName String?  @map("display_name")
-  homeRegion  String?  @map("home_region")
+  id                     String   @id @db.Uuid
+  email                  String   @unique
+  displayName            String?  @map("display_name")
+  homeRegion             String?  @map("home_region")
   // Recommender scoring weights (PLAN.md §6 w1–w4), editable in /settings;
   // null = code defaults (see src/lib/recommender.ts).
-  recommenderWeightsJson Json? @map("recommender_weights_json")
-  createdAt   DateTime @default(now()) @map("created_at")
+  recommenderWeightsJson Json?    @map("recommender_weights_json")
+  createdAt              DateTime @default(now()) @map("created_at")
 
   climbs Climb[]
 
@@ -172,8 +170,8 @@ model Route {
   climbs      Climb[]
   suggestions ClimbRouteSuggestion[]
 
-  @@index([name])
   @@unique([externalSource, externalId])
+  @@index([name])
   @@map("routes")
   @@schema("ascent_ledger")
 }

@@ -1,4 +1,5 @@
 import type { Discipline, GradeSystem } from "@/generated/prisma/enums";
+import type { LineString } from "geojson";
 
 // Pluggable importer interface (PLAN.md §5 point 4): one adapter per
 // source, each yielding source-agnostic ExternalRoute records. Adding a
@@ -19,6 +20,8 @@ export type ExternalRoute = {
   lengthM: number | null;
   pitches: number | null;
   description: string | null;
+  /** Optional canonical linework, stored through the Phase 8 route path fields. */
+  pathGeojson?: LineString | null;
   /** 1–5 if the source rates quality, else null. */
   qualityRating: number | null;
   area: {

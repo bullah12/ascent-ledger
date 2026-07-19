@@ -11,6 +11,10 @@ import {
   type SuggestedFeature,
 } from "./map-view";
 import { lineStartPoint, lineStringOrNull } from "@/lib/tracks";
+import {
+  sourceAttribution,
+  sourceAttributions,
+} from "@/lib/importers/source-attribution";
 
 export default async function MapPage() {
   const user = await requireUser();
@@ -42,7 +46,13 @@ export default async function MapPage() {
     getUserProgressAndSuggestions(prisma, user),
     prisma.route.findMany({
       where: { pathSource: { not: null } },
-      select: { id: true, name: true, pathGeojson: true, pathSource: true },
+      select: {
+        id: true,
+        name: true,
+        pathGeojson: true,
+        pathSource: true,
+        externalSource: true,
+      },
       orderBy: { updatedAt: "desc" },
       take: 500,
     }),
@@ -89,8 +99,12 @@ export default async function MapPage() {
       name: route.name,
       kind: "route",
       source: route.pathSource?.replaceAll("_", " ") ?? null,
+      attribution: sourceAttribution(route.externalSource)?.attribution ?? null,
     });
   }
+  const routeAttributions = sourceAttributions(
+    routesWithPaths.map((route) => route.externalSource)
+  );
 
   // Suggested routes across all unmet rules, deduped (a route can close
   // more than one gap), keeping the discipline for the per-category toggle.
@@ -127,6 +141,18 @@ export default async function MapPage() {
       </div>
 
       <MapView climbs={features} suggested={suggested} paths={paths} />
+
+      {routeAttributions.length > 0 && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Route data: {routeAttributions.map((item, index) => (
+            <span key={item.label}>
+              {index > 0 ? " · " : ""}
+              <a href={item.sourceUrl} className="underline">{item.attribution}</a>
+              {` (${item.licence})`}
+            </span>
+          ))}
+        </p>
+      )}
 
       {features.length < totalClimbs && (
         <p className="mt-3 text-xs text-muted-foreground">

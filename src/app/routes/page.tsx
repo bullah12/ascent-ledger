@@ -65,7 +65,11 @@ export default async function RoutesPage() {
           <TableBody>
             {routes.map((route) => (
               <TableRow key={route.id}>
-                <TableCell className="font-medium">{route.name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link href={`/routes/${route.id}`} className="hover:underline">
+                    {route.name}
+                  </Link>
+                </TableCell>
                 <TableCell>{disciplineLabels[route.discipline]}</TableCell>
                 <TableCell>{route.gradeRaw ?? "—"}</TableCell>
                 <TableCell>{route.area?.name ?? "—"}</TableCell>

@@ -18,6 +18,7 @@ export const gradeSystemLabels: Record<GradeSystem, string> = {
   wi_ice: "Water ice (WI)",
   alpine_overall: "Alpine overall",
   ski_touring_scale: "Ski touring",
+  sac_hiking: "SAC hiking",
 };
 
 // Grade systems offered per discipline (first entry = form default).
@@ -26,6 +27,7 @@ export const gradeSystemsByDiscipline: Record<Discipline, GradeSystem[]> = {
   winter: [GradeSystem.scottish_winter, GradeSystem.wi_ice],
   alpine: [GradeSystem.alpine_overall],
   ski_touring: [GradeSystem.ski_touring_scale],
+  hiking: [GradeSystem.sac_hiking],
 };
 
 // A grade string matches a ladder entry when one of the entry's aliases is

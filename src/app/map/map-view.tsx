@@ -32,6 +32,7 @@ export type StoredPath = {
   name: string;
   kind: "climb" | "route";
   source: string | null;
+  attribution?: string | null;
 };
 
 const CLIMBS_SOURCE = "climbs";
@@ -198,6 +199,7 @@ export function MapView({
               name: path.name,
               kind: path.kind,
               source: path.source ?? "",
+              attribution: path.attribution ?? "",
             },
           })),
         },
@@ -296,6 +298,7 @@ export function MapView({
                   ? `Personal track${props.source ? ` · ${props.source}` : ""}`
                   : `Canonical route${props.source ? ` · ${props.source}` : ""}`
               ),
+              props.attribution ? escapeHtml(props.attribution) : "",
             ].join("<br/>")
           )
           .addTo(map);

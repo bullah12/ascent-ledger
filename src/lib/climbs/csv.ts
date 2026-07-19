@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
+import { gradeSystemsByDiscipline } from "@/lib/grades";
 
 // Logbook CSV import format (Phase 3). Header row is required; column
 // order is free; unknown columns are ignored. See REQUIRED_COLUMNS /
@@ -8,11 +9,12 @@ import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
 //
 //   date         required  ISO date, e.g. 2025-02-14
 //   route_name   required  free text
-//   discipline   required  rock | winter | alpine | ski_touring
+//   discipline   required  rock | winter | alpine | ski_touring | hiking
 //   grade        required  raw grade string, e.g. "E1 5b", "V,6", "TD+"
 //   ascent_style required  led | alternate_lead | seconded | solo | roped_solo
 //   grade_system optional  uk_trad | french_sport | uiaa | scottish_winter |
-//                          wi_ice | alpine_overall | ski_touring_scale
+//                          wi_ice | alpine_overall | ski_touring_scale |
+//                          sac_hiking
 //                          (blank = inferred from discipline + grade)
 //   area         optional  free text crag/mountain name
 //   pitches      optional  positive integer
@@ -77,7 +79,11 @@ export const csvRowSchema = z.object({
   length_m: optionalPositiveInt,
   partners: z.string().trim().max(500, "partners is too long").optional(),
   notes: z.string().trim().max(2000, "notes is too long").optional(),
-});
+}).refine(
+  (row) =>
+    !row.grade_system || gradeSystemsByDiscipline[row.discipline].includes(row.grade_system),
+  { error: "grade_system does not match discipline", path: ["grade_system"] }
+);
 
 export type CsvRow = z.infer<typeof csvRowSchema>;
 

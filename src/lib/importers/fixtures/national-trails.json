@@ -1,0 +1,17 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "eng-1",
+      "properties": { "Name": "Fixture National Trail", "Length_Km": 12.5 },
+      "geometry": { "type": "MultiLineString", "coordinates": [[[-2.0, 52.0], [-1.9, 52.1]], [[-1.9, 52.1], [-1.8, 52.2]]] }
+    },
+    {
+      "type": "Feature",
+      "id": "eng-2",
+      "properties": { "Name": "Second Fixture Trail", "Length_Km": 4 },
+      "geometry": { "type": "LineString", "coordinates": [[-3.0, 53.0], [-2.9, 53.1]] }
+    }
+  ]
+}

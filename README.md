@@ -19,6 +19,8 @@ includes Phases 0–8, including trail drawing and GPX/KML track ingestion.
    - `DATABASE_URL` — pooled Postgres connection string (port 6543)
    - `DIRECT_URL` — direct connection string (port 5432, used by Prisma Migrate; optional)
    - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — from Project Settings → API
+   - `NATURESCOT_TRAILS_GEOJSON_URL` — optional HTTPS URL for an
+     official/licensed Scotland's Great Trails GeoJSON distribution
 3. Install, migrate, and run:
 
 ```bash
@@ -47,7 +49,23 @@ climbs.
 | `npm test`          | Vitest unit tests               |
 | `npm run backfill:tracks -- --dry-run` | Parse existing `gpx_track_url` files without writing |
 | `npm run backfill:tracks` | Populate missing Climb `path_geojson` values |
+| `npm run sync:routes -- --max=200` | Run each configured route importer with a per-source cap |
 | `npx prisma generate` | Regenerate the Prisma client (into `src/generated/prisma`, gitignored) |
+
+The weekly sync keeps OpenBeta and Camptocamp compatibility and adds bounded
+OpenStreetMap/Overpass UK + Alps queries, Natural England National Trails,
+Natural Resources Wales National Trails, and the optional NatureScot loader.
+Each source writes an independent `RouteImportLog`, so a temporary outage does
+not abort later adapters. NatureScot publishes a route catalogue but no stable
+machine-readable feature endpoint; configure only an official distribution and
+do not substitute scraped or proprietary route data.
+
+Imported records retain stable source IDs and links. Route details and the map
+display the applicable licence and attribution, including “© OpenStreetMap
+contributors” for OSM-derived geometry. Source-specific terms remain
+authoritative: OSM data is ODbL, Natural England and Natural Resources Wales
+data is OGL with the displayed agency/Ordnance Survey notices, OpenBeta is CC0,
+and Camptocamp content is CC BY-SA 3.0.
 
 ## Project layout
 
