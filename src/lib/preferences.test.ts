@@ -70,10 +70,28 @@ describe("Phase 10 onboarding and cold start", () => {
   });
 
   it("keeps the starter seed auditable and internally valid", () => {
-    expect(starterSeed.routes.length).toBeGreaterThanOrEqual(10);
+    expect(starterSeed.routes).toHaveLength(50);
+    const disciplineCounts = starterSeed.routes.reduce<Record<string, number>>(
+      (counts, route) => ({
+        ...counts,
+        [route.discipline]: (counts[route.discipline] ?? 0) + 1,
+      }),
+      {},
+    );
+    expect(disciplineCounts).toEqual({
+      hiking: 10,
+      rock: 10,
+      alpine: 10,
+      winter: 10,
+      ski_touring: 10,
+    });
+    const sourceIds = new Set<string>();
     for (const route of starterSeed.routes) {
       expect(starterSeed.sources).toHaveProperty(route.source);
       expect(route.external_id).not.toBe("");
+      const sourceId = `${route.source}:${route.external_id}`;
+      expect(sourceIds.has(sourceId)).toBe(false);
+      sourceIds.add(sourceId);
       expect(route.name).not.toBe("");
       expect(Number.isFinite(route.lat)).toBe(true);
       expect(Number.isFinite(route.lng)).toBe(true);

@@ -90,7 +90,10 @@ BEGIN
         "review_count" = GREATEST("review_count" - 1, 0)
     WHERE "id" = OLD."route_id";
   END IF;
-  RETURN COALESCE(NEW, OLD);
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
 END;
 $$;
 
