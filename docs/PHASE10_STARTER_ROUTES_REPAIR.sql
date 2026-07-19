@@ -774,6 +774,7 @@ $starter_routes$::jsonb) AS route(
   "area" TEXT,
   "region" TEXT,
   "country" TEXT
+)
 ),
 "_upserted_starter_areas" AS (
   INSERT INTO "ascent_ledger"."areas"
@@ -782,6 +783,7 @@ $starter_routes$::jsonb) AS route(
     gen_random_uuid(), "area", "region", "country",
     ARRAY[]::"ascent_ledger"."Discipline"[]
   FROM "_ascent_ledger_starter_routes"
+  WHERE TRUE
   ORDER BY "area"
   ON CONFLICT ("name") DO UPDATE
   SET "region" = EXCLUDED."region", "country" = EXCLUDED."country"
@@ -828,6 +830,7 @@ SELECT
   0
 FROM "_ascent_ledger_starter_routes" route
 JOIN "_upserted_starter_areas" area ON area."name" = route."area"
+WHERE TRUE
 ON CONFLICT ("external_source", "external_id") DO UPDATE
 SET "starter_disciplines" = EXCLUDED."starter_disciplines";
 COMMIT;
@@ -843,4 +846,3 @@ SELECT
    WHERE "visibility" = 'public') AS public_climbs,
   (SELECT COUNT(*) FROM "ascent_ledger"."climbs"
    WHERE "visibility" = 'private') AS private_climbs;
-
