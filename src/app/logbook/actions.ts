@@ -7,15 +7,26 @@ import { prisma } from "@/lib/prisma";
 import { resolveAreaId } from "@/lib/areas";
 import { createClient } from "@/lib/supabase/server";
 import {
-  GPX_BUCKET,
   MAX_PHOTOS_PER_CLIMB,
+  MAX_TRACK_BYTES,
   PHOTOS_BUCKET,
+  TRACKS_BUCKET,
   removeStoredFiles,
   uploadClimbPhoto,
-  uploadGpxTrack,
+  uploadTrackFile,
 } from "@/lib/storage";
 import { climbInputSchema, type ClimbInput } from "@/lib/climbs/validation";
 import { normaliseGrade } from "@/lib/grades";
+import { Prisma } from "@/generated/prisma/client";
+import { PathSource } from "@/generated/prisma/enums";
+import type { LineString } from "geojson";
+import {
+  TrackError,
+  parseSubmittedTrack,
+  parseTrackFile,
+  pathSourceForFormat,
+  type TrackPathSource,
+} from "@/lib/tracks";
 
 export type ClimbFormState = {
   error?: string;
@@ -68,27 +79,76 @@ function toClimbData(input: ClimbInput, areaId: string | null) {
   };
 }
 
-// Uploads the form's new photo files (input name "photos") and optional
-// GPX file, returning URLs — or a user-facing error string.
+type TrackSubmission = {
+  geometry: LineString | null;
+  source: TrackPathSource | null;
+};
+
+function parseTrackSubmission(formData: FormData):
+  | { ok: true; track: TrackSubmission }
+  | { ok: false; error: string } {
+  try {
+    const geometry = parseSubmittedTrack(formData.get("pathGeojson"));
+    if (!geometry) return { ok: true, track: { geometry: null, source: null } };
+    const rawSource = formData.get("pathSource");
+    const source =
+      typeof rawSource === "string" && Object.values(PathSource).includes(rawSource as PathSource)
+        ? (rawSource as TrackPathSource)
+        : "drawn";
+    return { ok: true, track: { geometry, source } };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof TrackError ? error.message : "Track geometry is invalid",
+    };
+  }
+}
+
+// Uploads new photos and an optional raw GPX/KML source, parsing the track on
+// the server before it is persisted.
 async function uploadAttachments(
   userId: string,
   formData: FormData,
   existingPhotoCount: number
 ): Promise<
-  | { ok: true; photoUrls: string[]; gpxUrl: string | null }
+  | {
+      ok: true;
+      photoUrls: string[];
+      rawTrackUrl: string | null;
+      importedTrack: TrackSubmission | null;
+    }
   | { ok: false; error: string }
 > {
   const photoFiles = formData
     .getAll("photos")
     .filter((f): f is File => f instanceof File && f.size > 0);
-  const gpxFile = formData.get("gpx");
-  const newGpx = gpxFile instanceof File && gpxFile.size > 0 ? gpxFile : null;
+  const trackFile = formData.get("trackFile");
+  const newTrack = trackFile instanceof File && trackFile.size > 0 ? trackFile : null;
 
   if (existingPhotoCount + photoFiles.length > MAX_PHOTOS_PER_CLIMB) {
     return { ok: false, error: `A climb can have at most ${MAX_PHOTOS_PER_CLIMB} photos.` };
   }
-  if (photoFiles.length === 0 && !newGpx) {
-    return { ok: true, photoUrls: [], gpxUrl: null };
+  if (photoFiles.length === 0 && !newTrack) {
+    return { ok: true, photoUrls: [], rawTrackUrl: null, importedTrack: null };
+  }
+
+  let importedTrack: TrackSubmission | null = null;
+  if (newTrack) {
+    if (newTrack.size > MAX_TRACK_BYTES) {
+      return { ok: false, error: "Track file is over 5 MB" };
+    }
+    try {
+      const parsed = await parseTrackFile(newTrack);
+      importedTrack = {
+        geometry: parsed.geometry,
+        source: pathSourceForFormat(parsed.format),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof TrackError ? error.message : "Could not parse the track file",
+      };
+    }
   }
 
   const supabase = await createClient();
@@ -99,14 +159,14 @@ async function uploadAttachments(
     photoUrls.push(result.url);
   }
 
-  let gpxUrl: string | null = null;
-  if (newGpx) {
-    const result = await uploadGpxTrack(supabase, userId, newGpx);
+  let rawTrackUrl: string | null = null;
+  if (newTrack) {
+    const result = await uploadTrackFile(supabase, userId, newTrack);
     if (!result.ok) return { ok: false, error: result.error };
-    gpxUrl = result.url;
+    rawTrackUrl = result.url;
   }
 
-  return { ok: true, photoUrls, gpxUrl };
+  return { ok: true, photoUrls, rawTrackUrl, importedTrack };
 }
 
 export async function createClimb(
@@ -116,9 +176,15 @@ export async function createClimb(
   const user = await requireUser();
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
+  const submittedTrack = parseTrackSubmission(formData);
+  if (!submittedTrack.ok) return { error: submittedTrack.error };
 
   const uploaded = await uploadAttachments(user.id, formData, 0);
   if (!uploaded.ok) return { error: uploaded.error };
+  const track =
+    submittedTrack.track.source === "drawn" && submittedTrack.track.geometry
+      ? submittedTrack.track
+      : uploaded.importedTrack ?? submittedTrack.track;
 
   try {
     const areaId = await resolveAreaId(parsed.input.area);
@@ -127,7 +193,10 @@ export async function createClimb(
         userId: user.id,
         ...toClimbData(parsed.input, areaId),
         photoUrls: uploaded.photoUrls,
-        gpxTrackUrl: uploaded.gpxUrl,
+        gpxTrackUrl: uploaded.rawTrackUrl,
+        pathGeojson:
+          (track.geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+        pathSource: track.geometry ? (track.source as PathSource) : null,
       },
     });
   } catch {
@@ -135,6 +204,7 @@ export async function createClimb(
   }
 
   revalidatePath("/logbook");
+  revalidatePath("/map");
   redirect("/logbook");
 }
 
@@ -146,6 +216,8 @@ export async function updateClimb(
   const user = await requireUser();
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
+  const submittedTrack = parseTrackSubmission(formData);
+  if (!submittedTrack.ok) return { error: submittedTrack.error };
 
   // Ownership check up front — attachment handling needs the current row.
   const existing = await prisma.climb.findFirst({
@@ -160,13 +232,17 @@ export async function updateClimb(
     formData.getAll("removePhotos").filter((v): v is string => typeof v === "string")
   );
   const keptPhotos = existing.photoUrls.filter((url) => !removePhotos.has(url));
-  const removeGpx = formData.get("removeGpx") === "on";
+  const removeTrackFile = formData.get("removeTrackFile") === "on";
 
   const uploaded = await uploadAttachments(user.id, formData, keptPhotos.length);
   if (!uploaded.ok) return { error: uploaded.error };
 
   const gpxTrackUrl =
-    uploaded.gpxUrl ?? (removeGpx ? null : existing.gpxTrackUrl);
+    uploaded.rawTrackUrl ?? (removeTrackFile ? null : existing.gpxTrackUrl);
+  const track =
+    submittedTrack.track.source === "drawn" && submittedTrack.track.geometry
+      ? submittedTrack.track
+      : uploaded.importedTrack ?? submittedTrack.track;
 
   try {
     const areaId = await resolveAreaId(parsed.input.area);
@@ -176,6 +252,9 @@ export async function updateClimb(
         ...toClimbData(parsed.input, areaId),
         photoUrls: [...keptPhotos, ...uploaded.photoUrls],
         gpxTrackUrl,
+        pathGeojson:
+          (track.geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+        pathSource: track.geometry ? (track.source as PathSource) : null,
       },
     });
   } catch {
@@ -188,10 +267,11 @@ export async function updateClimb(
     await removeStoredFiles(supabase, PHOTOS_BUCKET, [...removePhotos]);
   }
   if (existing.gpxTrackUrl && gpxTrackUrl !== existing.gpxTrackUrl) {
-    await removeStoredFiles(supabase, GPX_BUCKET, [existing.gpxTrackUrl]);
+    await removeStoredFiles(supabase, TRACKS_BUCKET, [existing.gpxTrackUrl]);
   }
 
   revalidatePath("/logbook");
+  revalidatePath("/map");
   redirect("/logbook");
 }
 

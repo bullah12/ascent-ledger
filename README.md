@@ -1,8 +1,8 @@
 # Ascent Ledger
 
 Personal climbing logbook and BMG-standard progress tracker. See
-`docs/PLAN.md` (on the plan branch) for the full product spec and phased
-roadmap — this repo currently contains the **Phase 0 scaffold**.
+`docs/PLAN.md` for the full product spec and phased roadmap. The current app
+includes Phases 0–8, including trail drawing and GPX/KML track ingestion.
 
 ## Stack
 
@@ -27,6 +27,11 @@ npx prisma migrate deploy   # applies prisma/migrations to your database
 npm run dev
 ```
 
+For raw Climb track archives, create a public Supabase Storage bucket named
+`gpx-tracks` with authenticated INSERT/DELETE policies restricted to paths
+starting with the user's auth UUID. Both GPX and KML files use this existing
+bucket name.
+
 Open <http://localhost:3000>. Sign up, confirm your email, and you land on
 the dashboard — from there, open the logbook at `/logbook` to start logging
 climbs.
@@ -39,6 +44,9 @@ climbs.
 | `npm run build`     | Production build                |
 | `npm run typecheck` | `tsc --noEmit`                  |
 | `npm run lint`      | ESLint                          |
+| `npm test`          | Vitest unit tests               |
+| `npm run backfill:tracks -- --dry-run` | Parse existing `gpx_track_url` files without writing |
+| `npm run backfill:tracks` | Populate missing Climb `path_geojson` values |
 | `npx prisma generate` | Regenerate the Prisma client (into `src/generated/prisma`, gitignored) |
 
 ## Project layout

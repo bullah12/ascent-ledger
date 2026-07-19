@@ -7,11 +7,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // <userId>/<random>.<ext> and referenced by public URL on the Climb row.
 
 export const PHOTOS_BUCKET = "climb-photos";
-export const GPX_BUCKET = "gpx-tracks";
+// Kept under the existing bucket name so Phase 6 GPX URLs remain valid; the
+// bucket now accepts both GPX and KML raw source files.
+export const TRACKS_BUCKET = "gpx-tracks";
+export const GPX_BUCKET = TRACKS_BUCKET;
 
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const MAX_PHOTOS_PER_CLIMB = 8;
-export const MAX_GPX_BYTES = 5 * 1024 * 1024;
+export const MAX_TRACK_BYTES = 5 * 1024 * 1024;
+export const MAX_GPX_BYTES = MAX_TRACK_BYTES;
 
 const PHOTO_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -60,19 +64,22 @@ export async function uploadClimbPhoto(
   return upload(supabase, PHOTOS_BUCKET, userId, file, ext, file.type);
 }
 
-export async function uploadGpxTrack(
+export async function uploadTrackFile(
   supabase: SupabaseClient,
   userId: string,
   file: File
 ): Promise<UploadResult> {
-  if (!file.name.toLowerCase().endsWith(".gpx")) {
-    return { ok: false, error: "Track file must be a .gpx file" };
-  }
-  if (file.size > MAX_GPX_BYTES) {
-    return { ok: false, error: "GPX file is over 5 MB" };
-  }
-  return upload(supabase, GPX_BUCKET, userId, file, "gpx", "application/gpx+xml");
+  const lower = file.name.toLowerCase();
+  const format = lower.endsWith(".gpx") ? "gpx" : lower.endsWith(".kml") ? "kml" : null;
+  if (!format) return { ok: false, error: "Track file must be GPX or KML" };
+  if (file.size > MAX_TRACK_BYTES) return { ok: false, error: "Track file is over 5 MB" };
+  const contentType =
+    format === "gpx" ? "application/gpx+xml" : "application/vnd.google-earth.kml+xml";
+  return upload(supabase, TRACKS_BUCKET, userId, file, format, contentType);
 }
+
+/** Backwards-compatible name for callers outside this workspace. */
+export const uploadGpxTrack = uploadTrackFile;
 
 /** Best-effort delete of previously uploaded files by public URL — a failed
  *  delete only leaks an orphaned file, never blocks the user's save. */

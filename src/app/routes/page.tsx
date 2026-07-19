@@ -59,6 +59,7 @@ export default async function RoutesPage() {
               <TableHead>Grade</TableHead>
               <TableHead>Area</TableHead>
               <TableHead>Map</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -69,11 +70,26 @@ export default async function RoutesPage() {
                 <TableCell>{route.gradeRaw ?? "—"}</TableCell>
                 <TableCell>{route.area?.name ?? "—"}</TableCell>
                 <TableCell>
-                  {route.lat !== null && route.lng !== null ? (
-                    <Badge variant="secondary">located</Badge>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  <div className="flex gap-1">
+                    {route.lat !== null && route.lng !== null && (
+                      <Badge variant="secondary">located</Badge>
+                    )}
+                    {route.pathGeojson !== null && (
+                      <Badge variant="outline">track</Badge>
+                    )}
+                    {route.lat === null && route.lng === null && route.pathGeojson === null && (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    render={<Link href={`/routes/${route.id}/edit`} />}
+                  >
+                    Edit
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

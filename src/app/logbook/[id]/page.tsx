@@ -106,20 +106,24 @@ export default async function ClimbDetailPage({
             }
           />
         )}
-        {climb.gpxTrackUrl && (
+        {(climb.gpxTrackUrl || climb.pathGeojson) && (
           <Fact
-            label="GPX track"
+            label="Track"
             value={
               <>
-                <a
-                  href={climb.gpxTrackUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  download
-                </a>{" "}
-                ·{" "}
+                {climb.gpxTrackUrl && (
+                  <>
+                    <a
+                      href={climb.gpxTrackUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline"
+                    >
+                      download original
+                    </a>{" "}
+                    ·{" "}
+                  </>
+                )}
                 <Link href="/map" className="underline">
                   view on map
                 </Link>

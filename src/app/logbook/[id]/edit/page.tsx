@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { gradeSystemsByDiscipline } from "@/lib/grades";
 import { updateClimb } from "../../actions";
 import { ClimbForm } from "../../climb-form";
+import { lineStringOrNull } from "@/lib/tracks";
 
 export default async function EditClimbPage({
   params,
@@ -42,7 +43,9 @@ export default async function EditClimbPage({
         action={boundUpdate}
         submitLabel="Save changes"
         existingPhotos={climb.photoUrls}
-        existingGpxUrl={climb.gpxTrackUrl}
+        existingTrackUrl={climb.gpxTrackUrl}
+        initialPath={lineStringOrNull(climb.pathGeojson)}
+        initialPathSource={climb.pathSource}
         linkedRoute={
           climb.route
             ? {

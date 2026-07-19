@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { TrackEditor } from "@/components/track-editor";
+import type { LineString } from "geojson";
+import type { TrackPathSource } from "@/lib/tracks";
 
 export type ClimbFormValues = {
   routeName: string;
@@ -38,14 +41,18 @@ export function ClimbForm({
   defaultValues,
   linkedRoute,
   existingPhotos = [],
-  existingGpxUrl = null,
+  existingTrackUrl = null,
+  initialPath = null,
+  initialPathSource = null,
   submitLabel,
 }: {
   action: (prev: ClimbFormState, formData: FormData) => Promise<ClimbFormState>;
   defaultValues?: ClimbFormValues;
   linkedRoute?: LinkedRoute | null;
   existingPhotos?: string[];
-  existingGpxUrl?: string | null;
+  existingTrackUrl?: string | null;
+  initialPath?: LineString | null;
+  initialPathSource?: TrackPathSource | null;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -241,27 +248,11 @@ export function ClimbForm({
         <Input id="photos" name="photos" type="file" accept="image/*" multiple />
       </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="gpx">
-          GPX track{" "}
-          <span className="font-normal text-muted-foreground">(optional)</span>
-        </Label>
-        {existingGpxUrl && (
-          <p className="text-sm text-muted-foreground">
-            Current:{" "}
-            <a href={existingGpxUrl} className="underline" target="_blank" rel="noreferrer">
-              track.gpx
-            </a>{" "}
-            <label className="ml-2">
-              <input type="checkbox" name="removeGpx" /> remove
-            </label>
-          </p>
-        )}
-        <Input id="gpx" name="gpx" type="file" accept=".gpx,application/gpx+xml" />
-        <p className="text-xs text-muted-foreground">
-          Uploading a new file replaces the current track.
-        </p>
-      </div>
+      <TrackEditor
+        initialGeometry={initialPath}
+        initialSource={initialPathSource}
+        existingRawUrl={existingTrackUrl}
+      />
 
       <FieldError message={state.error} />
 
