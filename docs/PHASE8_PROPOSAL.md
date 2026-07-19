@@ -1,9 +1,8 @@
 # Phase 8+ Proposal — Trails, Ingestion Breadth, Cold Start, Community, Preference Engine
 
-Status: **proposal for review — nothing here is implemented.** Once phases are
-approved (and the open decisions in §6 are answered), the intent is to append
-the table rows in §1 to `docs/PLAN.md` §7 and build one phase at a time, same
-as Phases 0–7.
+Status: **approved 2026-07-19 — all decisions D-1…D-11 resolved (see §7); the
+§1 table rows are appended to `docs/PLAN.md` §7.** Nothing is implemented yet;
+phases are built one at a time on request, same as Phases 0–7.
 
 Covers the five asks: (A) map trail drawing + track import, (B) broader
 ingestion, (C) cold start/onboarding, (D) community layer (reverses a §1
@@ -20,7 +19,7 @@ recommender.
 | **8** | **Trail geometry + track import (A):** trace a line on the MapLibre map when adding/editing a Climb or Route (terra-draw), GPX/KML upload that parses + simplifies + auto-plots, new `path_geojson` geometry on `Route` and `Climb`, backfill parse of existing `gpx_track_url` files, line rendering + fit-to-track on the map | 6 |
 | **9** | **Ingestion breadth (B):** OSM/Overpass adapter (hiking + via ferrata relations, region-scoped), OGL trail-agency adapters (National Trails England/Wales, Scotland's Great Trails), new `hiking` discipline + SAC `sac_hiking` grade ladder, per-source attribution/licence pass in UI footer + route pages | 4, **8** (trail sources emit line geometry) |
 | **10** | **Cold start + onboarding (C):** first-login onboarding (home region, disciplines, optional self-reported grade), curated starter-route seed + no-history suggestion path, minimal `user_preferences` table (seeded by onboarding, extended in Phase 12), grade/discipline explainer tooltips + a `/help/grades` page generated from `grade_ladders.json` | 5 (better after 9) |
-| **11** | **Community v1 (D — decision-gated):** public `RouteReview` (rating + text) and curated `Tag` vocabulary on `Route`, tag chips as at-a-glance summary, optional per-Climb "public tick" visibility flag, Supabase RLS for public reads — explicitly **no** feed, following, or profile pages | 3 (better after 9); blocked on decision D-1 |
+| **11** | **Community v1 (D):** public `RouteReview` (rating + text) and curated `Tag` vocabulary on `Route`, tag chips as at-a-glance summary, per-Climb opt-in "public tick" visibility flag (D-1: Option 2), Supabase RLS for public reads — explicitly **no** feed, following, or profile pages | 3 (better after 9) |
 | **12** | **Preference suggestion engine (E):** `user_preferences` extended (grade windows, regions, tags, trip length, engine weights), affinity profile computed from completed climbs (area/tag/grade-band with recency decay), new `src/lib/suggestions.ts` + shared `src/lib/scoring.ts` extracted from `recommender.ts`, "For you" panel + map layer | **9, 10**; benefits from 11 (tags/ratings), degrades gracefully without it |
 
 **Suggested ordering rationale:** 8 → 9 is a hard sequence — the most valuable
@@ -96,8 +95,8 @@ committed to MapLibre in §2.)
 File parsing: replace the hand-rolled GPX DOM parse with **`@tmcw/togeojson`**
 (MIT) — one small library that handles GPX *and* KML (and TCX for free),
 server-side or client-side. FIT-file support is possible via `fit-file-parser`
-but adds a binary-format dependency — proposed as **out of scope** unless you
-want it (decision D-4).
+but adds a binary-format dependency — **deferred as a future feature**
+(decision D-4: GPX + KML only in Phase 8).
 
 ### Files touched
 `prisma/schema.prisma` (+1 migration), `src/app/map/map-view.tsx` (draw mode,
@@ -242,7 +241,7 @@ but nothing breaks if it runs before.
 
 ---
 
-## 5. Phase 11 — Community v1 (D) — **decision point, reverses §1**
+## 5. Phase 11 — Community v1 (D) — **reverses part of §1; decided via D-1**
 
 §1 explicitly excludes "social feed, following, public profiles" in v1. The
 ask is the smallest "see others' trails + reviews + tags" that doesn't
@@ -272,9 +271,12 @@ require migrating existing climbs with consent, and drags in profile pages
 (a public climb implies "whose?" → a browsable person) — that *is* the
 non-feature §1 excluded.
 
-**My recommendation: Option 1 now, with the schema shaped so Option 2 is a
-one-column follow-up if reviews alone feel too anonymous.** Your call —
-decision **D-1**; nothing in this phase is buildable before it's made.
+**Decision (D-1): Option 2.** Route-centric reviews/tags *and* the per-Climb
+opt-in public tick ship together in this phase: `Climb.visibility` is added
+(default `private`, per-climb opt-in), and a public climb exposes name, date,
+grade, and style on the route page's tick list — never notes, photos, or
+tracks. The private-by-default contract for everything not explicitly opted
+in is unchanged.
 
 ### Data-model deltas (options 1+2)
 ```
@@ -296,7 +298,7 @@ RouteTag
 Route
  + review_count, avg_rating (cached aggregates, recomputed on write)
 
-Climb                                 -- Option 2 only
+Climb                                 -- in scope per D-1 (Option 2)
  + visibility (enum: private | public, default private)
 ```
 
@@ -399,21 +401,21 @@ alongside the existing amber "suggested" layer, `prisma/schema.prisma`
 
 ---
 
-## 7. Open decisions needed before building
+## 7. Decisions — **resolved 2026-07-19**
 
-| # | Decision | Options | Recommendation | Blocks |
-|---|---|---|---|---|
-| D-1 | **Community visibility model** | (1) route-centric reviews/tags only; (2) 1 + opt-in public ticks; (3) public-by-default logbook | Option 1, schema-ready for 2 | Phase 11 entirely |
-| D-2 | Add `hiking` discipline (+ SAC T1–T6 ladder)? It's outside BMG scope but is where trails/tags/E shine | yes / no (trails ride as `alpine`?) | Yes — clean enum add, no BmgCategory | Phase 9 |
-| D-3 | Geometry storage | GeoJSON `Json` column / PostGIS | GeoJSON now, PostGIS later if spatial queries appear | Phase 8 |
-| D-4 | Import formats beyond GPX | +KML only / +KML+FIT | KML only (togeojson gives it ~free); FIT adds a binary dep | Phase 8 |
-| D-5 | Explainer placement | tooltips + `/help/grades` / onboarding tutorial / both | Tooltips + help page generated from `grade_ladders.json` | Phase 10 |
-| D-6 | Preferences storage | `UserPreference` table / JSON blob on `User` | Table, with JSON only for weight tunables | Phases 10, 12 |
-| D-7 | Tag vocabulary | curated seed (~30) / freeform user tags | Curated — freeform needs moderation + dedup we don't want | Phase 11 |
-| D-8 | ODbL comfort: OSM-derived routes make the DB a derivative database (attribution mandatory; share-alike if ever redistributed) | accept / restrict to OGL sources only | Accept — personal, non-commercial, attribution shown | Phase 9 |
-| D-9 | Overpass region scope (bboxes to sync) | UK+Scotland only / UK+Alps / wider | UK + Alps, matching §1's stated scope | Phase 9 |
-| D-10 | Where E surfaces | dedicated `/suggestions` page / dashboard section / both | Dedicated page + map layer; dashboard stays BMG-focused | Phase 12 |
-| D-11 | E explore↔exploit default (familiar areas vs new ones — §6 deliberately does the opposite) | favour familiar / neutral / expose slider default-neutral | Slider, default mildly-familiar | Phase 12 |
+| # | Decision | Choice | Applies to |
+|---|---|---|---|
+| D-1 | Community visibility model | **Option 2** — route-centric reviews/tags **plus** per-Climb opt-in public ticks (`Climb.visibility`, default `private`) | Phase 11 |
+| D-2 | Add `hiking` discipline (+ SAC T1–T6 ladder) | **Yes** — clean enum add, no BmgCategory | Phase 9 |
+| D-3 | Geometry storage | **GeoJSON `Json` column now**; PostGIS later if spatial queries appear | Phase 8 |
+| D-4 | Import formats beyond GPX | **KML only** in Phase 8; **FIT deferred as a future feature** | Phase 8 |
+| D-5 | Explainer placement | **Tooltips + `/help/grades` page** generated from `grade_ladders.json` | Phase 10 |
+| D-6 | Preferences storage | **`UserPreference` table**, JSON only for weight tunables | Phases 10, 12 |
+| D-7 | Tag vocabulary | **Curated seed (~30 tags)** | Phase 11 |
+| D-8 | ODbL (OSM-derived routes → derivative database; attribution mandatory, share-alike if redistributed) | **Accept** — personal, non-commercial, attribution shown | Phase 9 |
+| D-9 | Overpass region scope | **UK + Alps**, matching §1's stated scope | Phase 9 |
+| D-10 | Where E surfaces | **Dedicated page + map layer**; dashboard stays BMG-focused | Phase 12 |
+| D-11 | E explore↔exploit default | **Slider, default mildly-familiar** | Phase 12 |
 
 Also carried over from PLAN.md §8: the BMG rule numbers' verification status
 is unaffected by all of the above — none of these phases touch `BmgRule`.

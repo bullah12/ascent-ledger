@@ -55,6 +55,10 @@ personal training/motivation tool.
 
 ### Explicit non-features (v1)
 - No social feed, no following other climbers, no public profiles.
+  *(Amended for Phase 11 — decision D-1 in `docs/PHASE8_PROPOSAL.md`: public
+  route reviews/tags and per-climb **opt-in** public ticks are in scope;
+  feeds, following, and profile pages remain excluded, and Climbs stay
+  private by default.)*
 - No payments/subscriptions.
 - No native mobile app — build a responsive PWA instead (installable, works
   offline for viewing your own logbook).
@@ -280,6 +284,15 @@ phase section only.
 | **5** | Recommendation engine v1 (rule-based gap analysis, per §6) + "suggested routes" panel per BMG sub-rule + suggested routes shown on map | 2, 4 |
 | **6** | Polish: photo upload, GPX import/display, PWA offline support for viewing own logbook, mobile layout pass | 3, 5 |
 | **7** | Curated Scottish winter seed data, area-diversity/distance scoring tuning, e2e tests (Playwright) for the core logbook→dashboard→recommendation flow | 4, 6 |
+| **8** | Trail geometry + track import: terra-draw line tracing on the MapLibre map for Climbs/Routes, GPX/KML upload → parse/simplify/auto-plot, `path_geojson` (GeoJSON LineString) on `Route` + `Climb`, backfill of existing `gpx_track_url` files | 6 |
+| **9** | Ingestion breadth: OSM/Overpass adapter (hiking + via ferrata, UK + Alps bboxes), OGL trail-agency adapters (National Trails, Scotland's Great Trails), `hiking` discipline + SAC `sac_hiking` ladder, per-source attribution pass | 4, 8 |
+| **10** | Cold start + onboarding: first-login flow (region/disciplines/optional self-reported grade), curated starter-route seed + no-history suggestion path, minimal `UserPreference` table, grade explainer tooltips + `/help/grades` generated from `grade_ladders.json` | 5 |
+| **11** | Community v1: public `RouteReview` + curated `Tag` vocabulary on `Route`, tag chips, per-Climb opt-in public-tick (`visibility`, default private), Supabase RLS for public reads — no feed/following/profile pages | 3 |
+| **12** | Preference suggestion engine: `UserPreference` extended (grade windows, regions, tags, trip length, weights), affinity profile from history with recency decay, `src/lib/suggestions.ts` + shared `src/lib/scoring.ts` extracted from `recommender.ts`, dedicated "For you" page + map layer | 9, 10 |
+
+Phases 8–12 are specified in detail — per-phase data-model deltas, touched
+files, rejected data sources, and the resolved decisions D-1…D-11 — in
+`docs/PHASE8_PROPOSAL.md`.
 
 ---
 
