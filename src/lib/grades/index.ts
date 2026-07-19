@@ -5,10 +5,14 @@ import ladders from "./grade_ladders.json";
 // cross-system conversion. A score answers "is this at/above threshold X"
 // within its own system only.
 
-type LadderEntry = { score: number; label: string; aliases: string[] };
-type Ladder = { label: string; entries: LadderEntry[] };
+export type LadderEntry = { score: number; label: string; aliases: string[] };
+export type GradeLadder = { label: string; _note?: string; entries: LadderEntry[] };
 
-const gradeLadders = ladders as unknown as Record<GradeSystem, Ladder>;
+const gradeLadders = ladders as unknown as Record<GradeSystem, GradeLadder>;
+
+export function gradeLadder(system: GradeSystem): GradeLadder {
+  return gradeLadders[system];
+}
 
 export const gradeSystemLabels: Record<GradeSystem, string> = {
   uk_trad: "UK trad",
@@ -18,6 +22,7 @@ export const gradeSystemLabels: Record<GradeSystem, string> = {
   wi_ice: "Water ice (WI)",
   alpine_overall: "Alpine overall",
   ski_touring_scale: "Ski touring",
+  sac_hiking: "SAC hiking",
 };
 
 // Grade systems offered per discipline (first entry = form default).
@@ -26,6 +31,7 @@ export const gradeSystemsByDiscipline: Record<Discipline, GradeSystem[]> = {
   winter: [GradeSystem.scottish_winter, GradeSystem.wi_ice],
   alpine: [GradeSystem.alpine_overall],
   ski_touring: [GradeSystem.ski_touring_scale],
+  hiking: [GradeSystem.sac_hiking],
 };
 
 // A grade string matches a ladder entry when one of the entry's aliases is

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   ascentStyleLabels,
@@ -10,6 +10,7 @@ import { gradeSystemLabels } from "@/lib/grades";
 import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GradeHint } from "@/components/grade-hint";
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -28,7 +29,7 @@ export default async function ClimbDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
 
   const climb = await prisma.climb.findFirst({
     where: { id, userId: user.id },
@@ -78,10 +79,19 @@ export default async function ClimbDetailPage({
                   ({gradeSystemLabels[climb.gradeSystem]})
                 </span>
               ) : null}
+              {climb.gradeSystem && <GradeHint system={climb.gradeSystem} />}
             </>
           }
         />
         <Fact label="Style" value={ascentStyleLabels[climb.ascentStyle]} />
+        <Fact
+          label="Visibility"
+          value={
+            <Badge variant={climb.visibility === "public" ? "default" : "outline"}>
+              {climb.visibility === "public" ? "Public tick" : "Private"}
+            </Badge>
+          }
+        />
         {climb.pitches !== null && <Fact label="Pitches" value={climb.pitches} />}
         {climb.lengthM !== null && <Fact label="Length" value={`${climb.lengthM} m`} />}
         {climb.partners.length > 0 && (
@@ -106,20 +116,24 @@ export default async function ClimbDetailPage({
             }
           />
         )}
-        {climb.gpxTrackUrl && (
+        {(climb.gpxTrackUrl || climb.pathGeojson) && (
           <Fact
-            label="GPX track"
+            label="Track"
             value={
               <>
-                <a
-                  href={climb.gpxTrackUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  download
-                </a>{" "}
-                ·{" "}
+                {climb.gpxTrackUrl && (
+                  <>
+                    <a
+                      href={climb.gpxTrackUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline"
+                    >
+                      download original
+                    </a>{" "}
+                    ·{" "}
+                  </>
+                )}
                 <Link href="/map" className="underline">
                   view on map
                 </Link>

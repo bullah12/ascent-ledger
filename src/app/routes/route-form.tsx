@@ -11,6 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { TrackEditor } from "@/components/track-editor";
+import type { LineString } from "geojson";
+import type { TrackPathSource } from "@/lib/tracks";
+import { GradeHint } from "@/components/grade-hint";
+
+export type RouteFormValues = {
+  name: string;
+  discipline: Discipline;
+  gradeSystem: GradeSystem;
+  gradeRaw: string;
+  area: string;
+  lat: number | null;
+  lng: number | null;
+  description: string;
+};
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -23,15 +38,25 @@ function FieldError({ message }: { message?: string }) {
 
 export function RouteForm({
   action,
+  defaultValues,
+  initialPath = null,
+  initialPathSource = null,
+  submitLabel = "Add route",
 }: {
   action: (prev: RouteFormState, formData: FormData) => Promise<RouteFormState>;
+  defaultValues?: RouteFormValues;
+  initialPath?: LineString | null;
+  initialPathSource?: TrackPathSource | null;
+  submitLabel?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const errors = state.fieldErrors ?? {};
 
-  const [discipline, setDiscipline] = useState<Discipline>(Discipline.rock);
+  const [discipline, setDiscipline] = useState<Discipline>(
+    defaultValues?.discipline ?? Discipline.rock
+  );
   const [gradeSystem, setGradeSystem] = useState<GradeSystem>(
-    gradeSystemsByDiscipline[Discipline.rock][0]
+    defaultValues?.gradeSystem ?? gradeSystemsByDiscipline[discipline][0]
   );
 
   function handleDisciplineChange(next: Discipline) {
@@ -50,6 +75,7 @@ export function RouteForm({
           name="name"
           required
           maxLength={200}
+          defaultValue={defaultValues?.name}
           placeholder="e.g. Point Five Gully"
         />
         <FieldError message={errors.name} />
@@ -83,6 +109,7 @@ export function RouteForm({
             id="area"
             name="area"
             maxLength={120}
+            defaultValue={defaultValues?.area}
             placeholder="e.g. Ben Nevis"
           />
           <FieldError message={errors.area} />
@@ -91,7 +118,7 @@ export function RouteForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label htmlFor="gradeSystem">Grade system</Label>
+          <Label htmlFor="gradeSystem">Grade system <GradeHint system={gradeSystem} /></Label>
           <NativeSelect
             id="gradeSystem"
             name="gradeSystem"
@@ -117,6 +144,7 @@ export function RouteForm({
             id="gradeRaw"
             name="gradeRaw"
             maxLength={50}
+            defaultValue={defaultValues?.gradeRaw}
             placeholder='e.g. "V,5", "TD+"'
           />
           <FieldError message={errors.gradeRaw} />
@@ -136,6 +164,7 @@ export function RouteForm({
             step="any"
             min={-90}
             max={90}
+            defaultValue={defaultValues?.lat ?? undefined}
             placeholder="e.g. 56.7969"
           />
           <FieldError message={errors.lat} />
@@ -153,6 +182,7 @@ export function RouteForm({
             step="any"
             min={-180}
             max={180}
+            defaultValue={defaultValues?.lng ?? undefined}
             placeholder="e.g. -5.0036"
           />
           <FieldError message={errors.lng} />
@@ -169,16 +199,19 @@ export function RouteForm({
           name="description"
           maxLength={4000}
           rows={4}
+          defaultValue={defaultValues?.description}
           placeholder="Approach, character, season…"
         />
         <FieldError message={errors.description} />
       </div>
 
+      <TrackEditor initialGeometry={initialPath} initialSource={initialPathSource} />
+
       <FieldError message={state.error} />
 
       <div className="flex gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Add route"}
+          {pending ? "Saving…" : submitLabel}
         </Button>
         <Button variant="ghost" render={<Link href="/routes" />}>
           Cancel

@@ -1,6 +1,9 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { normaliseGrade } from "@/lib/grades";
 import { generateLinkSuggestions } from "@/lib/matching";
+import { lineStartPoint } from "@/lib/tracks";
+import { Prisma } from "@/generated/prisma/client";
+import { PathSource } from "@/generated/prisma/enums";
 import type { ExternalRoute, RouteImporter } from "./types";
 
 // Sync runner: drives any RouteImporter, upserts Routes keyed on
@@ -58,7 +61,7 @@ async function findOrCreateArea(
   return created.id;
 }
 
-async function syncSource(
+export async function syncSource(
   prisma: PrismaClient,
   importer: RouteImporter,
   options: SyncOptions
@@ -81,6 +84,7 @@ async function syncSource(
           ? await findOrCreateArea(prisma, areaCache, route.area)
           : null;
 
+        const start = route.pathGeojson ? lineStartPoint(route.pathGeojson) : null;
         const data = {
           name: route.name,
           discipline: route.discipline,
@@ -91,14 +95,21 @@ async function syncSource(
               ? normaliseGrade(route.gradeSystem, route.gradeRaw)
               : null,
           areaId,
-          lat: route.lat,
-          lng: route.lng,
+          lat: route.lat ?? start?.lat ?? null,
+          lng: route.lng ?? start?.lng ?? null,
           lengthM: route.lengthM,
           pitches: route.pitches,
           description: route.description,
           qualityRating: route.qualityRating,
           externalUrl: route.externalUrl,
           lastSyncedAt: new Date(),
+          ...(route.pathGeojson !== undefined
+            ? {
+                pathGeojson:
+                  (route.pathGeojson as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+                pathSource: route.pathGeojson ? PathSource.import : null,
+              }
+            : {}),
         };
 
         const existing = await prisma.route.findUnique({

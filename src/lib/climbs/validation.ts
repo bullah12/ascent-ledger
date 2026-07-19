@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
+import {
+  AscentStyle,
+  ClimbVisibility,
+  Discipline,
+  GradeSystem,
+} from "@/generated/prisma/enums";
+import { gradeSystemsByDiscipline } from "@/lib/grades";
 
 export const climbInputSchema = z.object({
   routeName: z
@@ -20,6 +26,10 @@ export const climbInputSchema = z.object({
   notes: z.string().trim().max(2000, "Notes are too long").optional(),
   // Optional link to a canonical Route (Phase 3); climbs may stay free-text.
   routeId: z.uuid({ error: "Invalid route" }).optional(),
-});
+  visibility: z.enum(ClimbVisibility).default(ClimbVisibility.private),
+}).refine(
+  (climb) => gradeSystemsByDiscipline[climb.discipline].includes(climb.gradeSystem),
+  { error: "Grade system does not match the discipline", path: ["gradeSystem"] }
+);
 
 export type ClimbInput = z.infer<typeof climbInputSchema>;

@@ -7,6 +7,12 @@ import {
 } from "@/lib/bmg/engine";
 import { gradeLabelForScore, gradeSystemsByDiscipline } from "@/lib/grades";
 import { normaliseText } from "@/lib/matching";
+import {
+  haversineKm,
+  proximityScore,
+  ratingScore,
+  roundScore,
+} from "@/lib/scoring";
 
 // Rule-based route recommender (PLAN.md §6 — no ML, deliberately simple
 // and debuggable). For each unmet BMG sub-rule:
@@ -101,19 +107,6 @@ const GRADE_WINDOW_ABOVE = 2;
 const DISTANCE_NORM_KM = 500; // penalty saturates at this distance
 const TOP_N = 5;
 
-function haversineKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number }
-): number {
-  const rad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * rad;
-  const dLng = (b.lng - a.lng) * rad;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.sqrt(h));
-}
-
 /** User's best normalised score in one grade system, from their climbs. */
 function currentMaxScore(
   climbs: EngineClimb[],
@@ -131,6 +124,25 @@ function currentMaxScore(
   return max;
 }
 
+export function provisionalGradeScore(json: unknown, system: GradeSystem): number | null {
+  if (!json || typeof json !== "object") return null;
+  const value = (json as Record<string, unknown>)[system];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** Real history always wins; provisional onboarding grades are cold-start only. */
+export function resolveGradeAnchor(
+  climbs: EngineClimb[],
+  discipline: Discipline,
+  system: GradeSystem,
+  provisionalGradesJson: unknown
+): { score: number | null; provisional: boolean } {
+  const real = currentMaxScore(climbs, discipline, system);
+  if (real !== null) return { score: real, provisional: false };
+  const provisional = provisionalGradeScore(provisionalGradesJson, system);
+  return { score: provisional, provisional: provisional !== null };
+}
+
 function recommendForRule(
   rule: RuleForRec,
   discipline: Discipline,
@@ -142,7 +154,8 @@ function recommendForRule(
     visitedAreaKeys: Set<string>;
     visitedCoords: { lat: number; lng: number }[];
   },
-  weights: RecommenderWeights
+  weights: RecommenderWeights,
+  provisionalGradesJson: unknown
 ): RouteSuggestion[] {
   // The grade window is anchored on the user's current max in the rule's
   // grade system ("just above your comfortable grade", §6). For rules
@@ -150,8 +163,14 @@ function recommendForRule(
   // with no graded climbs at all, the rule threshold anchors instead.
   const system =
     rule.gradeSystem ?? gradeSystemsByDiscipline[discipline][0];
-  const currentMax = currentMaxScore(climbs, discipline, system);
-  const anchor = currentMax ?? rule.minGradeNormalisedScore;
+  const resolvedAnchor = resolveGradeAnchor(
+    climbs,
+    discipline,
+    system,
+    provisionalGradesJson
+  );
+  const currentMax = resolvedAnchor.provisional ? null : resolvedAnchor.score;
+  const anchor = resolvedAnchor.score ?? rule.minGradeNormalisedScore;
 
   const constraint =
     rule.extraConstraintJson && typeof rule.extraConstraintJson === "object"
@@ -180,12 +199,11 @@ function recommendForRule(
         continue;
       }
       // Best fit = one step above current max ("next logical grade").
-      const target = currentMax !== null ? currentMax + 1 : anchor;
-      gradeFit = 1 - Math.abs(s - target) / (GRADE_WINDOW_ABOVE + 1);
+      const target = resolvedAnchor.score !== null ? resolvedAnchor.score + 1 : anchor;
+      gradeFit = proximityScore(s, target, GRADE_WINDOW_ABOVE + 1);
     }
 
-    const quality =
-      route.qualityRating !== null ? (route.qualityRating - 1) / 4 : 0.5;
+    const quality = ratingScore(route.qualityRating);
 
     const areaKey = route.area
       ? normaliseText(route.area.name)
@@ -217,7 +235,7 @@ function recommendForRule(
       externalUrl: route.externalUrl,
       lat: route.lat,
       lng: route.lng,
-      score: Math.round(score * 1000) / 1000,
+      score: roundScore(score),
       why: whyLine({
         gradeFit,
         quality,
@@ -226,6 +244,7 @@ function recommendForRule(
         route,
         system,
         currentMax,
+        provisionalAnchor: resolvedAnchor.provisional ? resolvedAnchor.score : null,
       }),
     });
   }
@@ -242,6 +261,7 @@ function whyLine(input: {
   route: CandidateRoute;
   system: GradeSystem;
   currentMax: number | null;
+  provisionalAnchor: number | null;
 }): string {
   const { route, system, currentMax } = input;
   const parts: string[] = [];
@@ -253,6 +273,9 @@ function whyLine(input: {
     else if (delta > 1) parts.push(`${delta} grade steps above your current ${maxLabel} max`);
     else if (delta === 0) parts.push(`at your current ${maxLabel} level`);
     else parts.push(`consolidates below your ${maxLabel} max`);
+  } else if (input.provisionalAnchor !== null) {
+    const label = gradeLabelForScore(system, input.provisionalAnchor) ?? "reported";
+    parts.push(`based on your provisional ${label} level`);
   } else if (route.gradeRaw) {
     parts.push(`at the rule's target grade (${route.gradeRaw})`);
   }
@@ -280,7 +303,8 @@ export async function getSuggestions(
     key: Discipline;
     rules: (RuleForRec & { discipline?: never })[];
   }[],
-  weights: RecommenderWeights
+  weights: RecommenderWeights,
+  provisionalGradesJson: unknown = null
 ): Promise<CategorySuggestions[]> {
   const [routes, climbs] = await Promise.all([
     prisma.route.findMany({
@@ -347,7 +371,8 @@ export async function getSuggestions(
           routes,
           climbs,
           context,
-          weights
+          weights,
+          provisionalGradesJson
         ),
       })),
   }));

@@ -2,7 +2,12 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
+import {
+  AscentStyle,
+  ClimbVisibility,
+  Discipline,
+  GradeSystem,
+} from "@/generated/prisma/enums";
 import { ascentStyleLabels, disciplineLabels } from "@/lib/climbs/labels";
 import { gradeSystemLabels, gradeSystemsByDiscipline } from "@/lib/grades";
 import type { ClimbFormState } from "./actions";
@@ -12,6 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { TrackEditor } from "@/components/track-editor";
+import type { LineString } from "geojson";
+import type { TrackPathSource } from "@/lib/tracks";
+import { GradeHint } from "@/components/grade-hint";
 
 export type ClimbFormValues = {
   routeName: string;
@@ -22,6 +31,7 @@ export type ClimbFormValues = {
   ascentStyle: AscentStyle;
   area: string;
   notes: string;
+  visibility: ClimbVisibility;
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -38,14 +48,18 @@ export function ClimbForm({
   defaultValues,
   linkedRoute,
   existingPhotos = [],
-  existingGpxUrl = null,
+  existingTrackUrl = null,
+  initialPath = null,
+  initialPathSource = null,
   submitLabel,
 }: {
   action: (prev: ClimbFormState, formData: FormData) => Promise<ClimbFormState>;
   defaultValues?: ClimbFormValues;
   linkedRoute?: LinkedRoute | null;
   existingPhotos?: string[];
-  existingGpxUrl?: string | null;
+  existingTrackUrl?: string | null;
+  initialPath?: LineString | null;
+  initialPathSource?: TrackPathSource | null;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -94,6 +108,23 @@ export function ClimbForm({
         <FieldError message={errors.routeName} />
       </div>
 
+      <label className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+        <input
+          type="checkbox"
+          name="visibility"
+          value={ClimbVisibility.public}
+          defaultChecked={defaultValues?.visibility === ClimbVisibility.public}
+          className="mt-1"
+        />
+        <span>
+          <span className="block font-medium">Show as a public tick</span>
+          <span className="text-muted-foreground">
+            Opt in to showing only your display name, route name, date, grade,
+            and ascent style on the linked route. Notes, partners, photos, and tracks stay private.
+          </span>
+        </span>
+      </label>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="discipline">Discipline</Label>
@@ -128,7 +159,7 @@ export function ClimbForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label htmlFor="gradeSystem">Grade system</Label>
+          <Label htmlFor="gradeSystem">Grade system <GradeHint system={gradeSystem} /></Label>
           <NativeSelect
             id="gradeSystem"
             name="gradeSystem"
@@ -241,27 +272,11 @@ export function ClimbForm({
         <Input id="photos" name="photos" type="file" accept="image/*" multiple />
       </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="gpx">
-          GPX track{" "}
-          <span className="font-normal text-muted-foreground">(optional)</span>
-        </Label>
-        {existingGpxUrl && (
-          <p className="text-sm text-muted-foreground">
-            Current:{" "}
-            <a href={existingGpxUrl} className="underline" target="_blank" rel="noreferrer">
-              track.gpx
-            </a>{" "}
-            <label className="ml-2">
-              <input type="checkbox" name="removeGpx" /> remove
-            </label>
-          </p>
-        )}
-        <Input id="gpx" name="gpx" type="file" accept=".gpx,application/gpx+xml" />
-        <p className="text-xs text-muted-foreground">
-          Uploading a new file replaces the current track.
-        </p>
-      </div>
+      <TrackEditor
+        initialGeometry={initialPath}
+        initialSource={initialPathSource}
+        existingRawUrl={existingTrackUrl}
+      />
 
       <FieldError message={state.error} />
 

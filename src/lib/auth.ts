@@ -23,3 +23,14 @@ export const requireUser = cache(async () => {
     create: { id: user.id, email: user.email },
   });
 });
+
+/** Protected product pages use the preference row as the onboarding-complete
+ * signal. The onboarding page itself deliberately calls requireUser(). */
+export const requireOnboardedUser = cache(async () => {
+  const user = await requireUser();
+  const preference = await prisma.userPreference.findUnique({
+    where: { userId: user.id },
+  });
+  if (!preference) redirect("/onboarding");
+  return { ...user, preference };
+});

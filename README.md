@@ -1,8 +1,10 @@
 # Ascent Ledger
 
 Personal climbing logbook and BMG-standard progress tracker. See
-`docs/PLAN.md` (on the plan branch) for the full product spec and phased
-roadmap — this repo currently contains the **Phase 0 scaffold**.
+`docs/PLAN.md` for the full product spec and phased roadmap. The current app
+includes Phases 0–12, including open trail ingestion, onboarding, auditable
+starter packs, private-by-default route community features, and the separate
+preference-driven “For you” engine.
 
 ## Stack
 
@@ -19,13 +21,23 @@ roadmap — this repo currently contains the **Phase 0 scaffold**.
    - `DATABASE_URL` — pooled Postgres connection string (port 6543)
    - `DIRECT_URL` — direct connection string (port 5432, used by Prisma Migrate; optional)
    - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — from Project Settings → API
+   - `NATURESCOT_TRAILS_GEOJSON_URL` — optional HTTPS URL for an
+     official/licensed Scotland's Great Trails GeoJSON distribution
 3. Install, migrate, and run:
 
 ```bash
 npm install                 # also runs `prisma generate`
 npx prisma migrate deploy   # applies prisma/migrations to your database
+npm run db:seed             # BMG rules
+npm run db:seed:starters    # idempotent open-source starter routes
+npm run db:seed:tags        # idempotent curated route-tag vocabulary
 npm run dev
 ```
+
+For raw Climb track archives, create a public Supabase Storage bucket named
+`gpx-tracks` with authenticated INSERT/DELETE policies restricted to paths
+starting with the user's auth UUID. Both GPX and KML files use this existing
+bucket name.
 
 Open <http://localhost:3000>. Sign up, confirm your email, and you land on
 the dashboard — from there, open the logbook at `/logbook` to start logging
@@ -39,7 +51,51 @@ climbs.
 | `npm run build`     | Production build                |
 | `npm run typecheck` | `tsc --noEmit`                  |
 | `npm run lint`      | ESLint                          |
+| `npm test`          | Vitest unit tests               |
+| `npm run backfill:tracks -- --dry-run` | Parse existing `gpx_track_url` files without writing |
+| `npm run backfill:tracks` | Populate missing Climb `path_geojson` values |
+| `npm run sync:routes -- --max=200` | Run each configured route importer with a per-source cap |
+| `npm run db:seed:starters` | Upsert the verified starter-route pack and flags |
+| `npm run db:seed:tags` | Upsert the curated terrain/character/hazard/logistics tags |
 | `npx prisma generate` | Regenerate the Prisma client (into `src/generated/prisma`, gitignored) |
+
+The weekly sync keeps OpenBeta and Camptocamp compatibility and adds bounded
+OpenStreetMap/Overpass UK + Alps queries, Natural England National Trails,
+Natural Resources Wales National Trails, and the optional NatureScot loader.
+Each source writes an independent `RouteImportLog`, so a temporary outage does
+not abort later adapters. NatureScot publishes a route catalogue but no stable
+machine-readable feature endpoint; configure only an official distribution and
+do not substitute scraped or proprietary route data.
+
+Imported records retain stable source IDs and links. Route details and the map
+display the applicable licence and attribution, including “© OpenStreetMap
+contributors” for OSM-derived geometry. Source-specific terms remain
+authoritative: OSM data is ODbL, Natural England and Natural Resources Wales
+data is OGL with the displayed agency/Ordnance Survey notices, OpenBeta is CC0,
+and Camptocamp content is CC BY-SA 3.0.
+
+New users complete a three-step `/onboarding` flow. Its preference row is the
+completion signal; optional self-reported grades are provisional and are used
+only until a real climb exists in that grade system. Existing users are
+backfilled as complete by the Phase 10 migration. The starter seed is audited
+in `docs/starter_routes.seed.json`; it never creates `Climb` rows.
+
+Community reviews and route tags are visible to other users, while climbs
+remain `private` by database default. A climb appears in route-centric public
+ticks only after explicit per-climb opt-in, and the public projection contains
+only display name/fallback, route name, date, grade, and ascent style. Supabase
+RLS restricts writes to owners; private preferences and sensitive climb fields
+are never included in anonymous grants. Run the Phase 11 migration before the
+tag seed so the enum and tables exist.
+
+`/for-you` scores the route database from recency-weighted completed-climb
+history and explicit settings. Grade comfort uses a recent weighted band rather
+than an all-time maximum; community rating is preferred with source quality as
+fallback; completed routes are excluded. The default explore level is `0.35`
+(mildly familiar). Route distance and pitches provide the documented trip-day
+proxy (25 km or eight pitches per day). All terms are normalised to 0–1 and
+ties are ordered by route name then ID. These settings and weights are stored
+separately from the BMG gap recommender, whose dashboard behavior is unchanged.
 
 ## Project layout
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Discipline, GradeSystem } from "@/generated/prisma/enums";
+import { gradeSystemsByDiscipline } from "@/lib/grades";
 
 const optionalNumber = (schema: z.ZodType<number>) =>
   z.preprocess(
@@ -42,6 +43,10 @@ export const routeInputSchema = z
   .refine((route) => (route.lat === undefined) === (route.lng === undefined), {
     error: "Provide both latitude and longitude, or neither",
     path: ["lng"],
-  });
+  })
+  .refine(
+    (route) => gradeSystemsByDiscipline[route.discipline].includes(route.gradeSystem),
+    { error: "Grade system does not match the discipline", path: ["gradeSystem"] }
+  );
 
 export type RouteInput = z.infer<typeof routeInputSchema>;

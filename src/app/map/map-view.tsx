@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
+import type { LineString } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 export type ClimbFeature = {
@@ -25,28 +26,33 @@ export type SuggestedFeature = {
   why: string;
 };
 
-export type GpxTrack = {
-  url: string;
+export type ForYouFeature = {
+  routeId: string;
+  lng: number;
+  lat: number;
   name: string;
+  gradeRaw: string | null;
+  areaName: string | null;
+  why: string;
+};
+
+export type StoredPath = {
+  id: string;
+  geometry: LineString;
+  name: string;
+  kind: "climb" | "route";
+  source: string | null;
+  attribution?: string | null;
 };
 
 const CLIMBS_SOURCE = "climbs";
 const SUGGESTED_SOURCE = "suggested";
+const FOR_YOU_SOURCE = "for-you";
+const PATHS_SOURCE = "stored-paths";
 const SUGGESTED_COLOR = "#d97706"; // amber — distinct from the teal climbs
-const TRACK_COLOR = "#7c3aed"; // violet — GPX tracks
-const MAX_TRACKS = 20;
-
-// Minimal GPX parse: every <trkpt>/<rtept> lat/lon in document order.
-function parseGpx(xml: string): [number, number][] {
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
-  const points: [number, number][] = [];
-  for (const pt of doc.querySelectorAll("trkpt, rtept")) {
-    const lat = Number(pt.getAttribute("lat"));
-    const lon = Number(pt.getAttribute("lon"));
-    if (Number.isFinite(lat) && Number.isFinite(lon)) points.push([lon, lat]);
-  }
-  return points;
-}
+const FOR_YOU_COLOR = "#c026d3"; // fuchsia — distinct from BMG amber
+const CLIMB_PATH_COLOR = "#7c3aed"; // violet — personal tracks
+const ROUTE_PATH_COLOR = "#2563eb"; // blue — canonical route geometry
 
 function suggestedFilter(enabled: string[]): maplibregl.FilterSpecification {
   return ["in", ["get", "category"], ["literal", enabled]];
@@ -55,11 +61,13 @@ function suggestedFilter(enabled: string[]): maplibregl.FilterSpecification {
 export function MapView({
   climbs,
   suggested,
-  tracks = [],
+  forYou = [],
+  paths = [],
 }: {
   climbs: ClimbFeature[];
   suggested: SuggestedFeature[];
-  tracks?: GpxTrack[];
+  forYou?: ForYouFeature[];
+  paths?: StoredPath[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -68,6 +76,7 @@ export function MapView({
   const [enabled, setEnabled] = useState<string[]>(() =>
     categories.map(([key]) => key)
   );
+  const [forYouEnabled, setForYouEnabled] = useState(true);
   // Mirrors `enabled` for the map's async load callback (a ref so the map
   // isn't torn down and rebuilt on every toggle).
   const enabledRef = useRef(enabled);
@@ -133,6 +142,37 @@ export function MapView({
         },
       });
 
+      map.addSource(FOR_YOU_SOURCE, {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: forYou.map((suggestion) => ({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [suggestion.lng, suggestion.lat] },
+            properties: {
+              routeId: suggestion.routeId,
+              name: suggestion.name,
+              gradeRaw: suggestion.gradeRaw ?? "",
+              areaName: suggestion.areaName ?? "",
+              why: suggestion.why,
+            },
+          })),
+        },
+      });
+
+      map.addLayer({
+        id: "for-you-points",
+        type: "circle",
+        source: FOR_YOU_SOURCE,
+        paint: {
+          "circle-color": FOR_YOU_COLOR,
+          "circle-radius": 7,
+          "circle-opacity": 0.9,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
+
       map.addLayer({
         id: "cluster-count",
         type: "symbol",
@@ -193,6 +233,48 @@ export function MapView({
         },
       });
 
+      map.addSource(PATHS_SOURCE, {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: paths.map((path) => ({
+            id: path.id,
+            type: "Feature",
+            geometry: path.geometry,
+            properties: {
+              name: path.name,
+              kind: path.kind,
+              source: path.source ?? "",
+              attribution: path.attribution ?? "",
+            },
+          })),
+        },
+      });
+
+      map.addLayer({
+        id: "route-paths",
+        type: "line",
+        source: PATHS_SOURCE,
+        filter: ["==", ["get", "kind"], "route"],
+        paint: {
+          "line-color": ROUTE_PATH_COLOR,
+          "line-width": 3,
+          "line-opacity": 0.65,
+        },
+      });
+
+      map.addLayer({
+        id: "climb-paths",
+        type: "line",
+        source: PATHS_SOURCE,
+        filter: ["==", ["get", "kind"], "climb"],
+        paint: {
+          "line-color": CLIMB_PATH_COLOR,
+          "line-width": 4,
+          "line-opacity": 0.85,
+        },
+      });
+
       map.on("click", "suggested-points", (e) => {
         const feature = e.features?.[0];
         if (!feature) return;
@@ -210,6 +292,21 @@ export function MapView({
         new maplibregl.Popup({ offset: 12 })
           .setLngLat(coordinates)
           .setHTML(lines.join("<br/>"))
+          .addTo(map);
+      });
+
+      map.on("click", "for-you-points", (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+        const props = feature.properties as Record<string, string>;
+        const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+        new maplibregl.Popup({ offset: 12 })
+          .setLngLat(coordinates)
+          .setHTML([
+            `<strong>${escapeHtml(props.name)}</strong> <em>(For you)</em>`,
+            escapeHtml([props.gradeRaw, props.areaName].filter(Boolean).join(" · ")),
+            escapeHtml(props.why),
+          ].filter(Boolean).join("<br/>"))
           .addTo(map);
       });
 
@@ -248,7 +345,36 @@ export function MapView({
           .addTo(map);
       });
 
-      for (const layer of ["clusters", "climb-points", "suggested-points"]) {
+      const showPathPopup = (e: maplibregl.MapLayerMouseEvent) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+        const props = feature.properties as Record<string, string>;
+        new maplibregl.Popup({ offset: 8 })
+          .setLngLat(e.lngLat)
+          .setHTML(
+            [
+              `<strong>${escapeHtml(props.name)}</strong>`,
+              escapeHtml(
+                props.kind === "climb"
+                  ? `Personal track${props.source ? ` · ${props.source}` : ""}`
+                  : `Canonical route${props.source ? ` · ${props.source}` : ""}`
+              ),
+              props.attribution ? escapeHtml(props.attribution) : "",
+            ].join("<br/>")
+          )
+          .addTo(map);
+      };
+      map.on("click", "route-paths", showPathPopup);
+      map.on("click", "climb-paths", showPathPopup);
+
+      for (const layer of [
+        "clusters",
+        "climb-points",
+        "suggested-points",
+        "for-you-points",
+        "route-paths",
+        "climb-paths",
+      ]) {
         map.on("mouseenter", layer, () => {
           map.getCanvas().style.cursor = "pointer";
         });
@@ -257,45 +383,14 @@ export function MapView({
         });
       }
 
-      // GPX tracks load lazily after the map is up; a failed fetch just
-      // means that track doesn't draw.
-      void (async () => {
-        for (const track of tracks.slice(0, MAX_TRACKS)) {
-          try {
-            const response = await fetch(track.url);
-            if (!response.ok) continue;
-            const points = parseGpx(await response.text());
-            if (points.length < 2 || mapRef.current !== map) continue;
-            const sourceId = `gpx-${track.url}`;
-            if (map.getSource(sourceId)) continue;
-            map.addSource(sourceId, {
-              type: "geojson",
-              data: {
-                type: "Feature",
-                geometry: { type: "LineString", coordinates: points },
-                properties: { name: track.name },
-              },
-            });
-            map.addLayer({
-              id: sourceId,
-              type: "line",
-              source: sourceId,
-              paint: {
-                "line-color": TRACK_COLOR,
-                "line-width": 3,
-                "line-opacity": 0.8,
-              },
-            });
-          } catch {
-            // Unreachable track file — skip it.
-          }
-        }
-      })();
-
-      if (climbs.length > 0 || suggested.length > 0) {
+      if (climbs.length > 0 || suggested.length > 0 || forYou.length > 0 || paths.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
         for (const climb of climbs) bounds.extend([climb.lng, climb.lat]);
         for (const s of suggested) bounds.extend([s.lng, s.lat]);
+        for (const s of forYou) bounds.extend([s.lng, s.lat]);
+        for (const path of paths) {
+          for (const [lng, lat] of path.geometry.coordinates) bounds.extend([lng, lat]);
+        }
         map.fitBounds(bounds, { padding: 60, maxZoom: 12 });
       }
     });
@@ -304,7 +399,7 @@ export function MapView({
       mapRef.current = null;
       map.remove();
     };
-  }, [climbs, suggested, tracks]);
+  }, [climbs, suggested, forYou, paths]);
 
   // Per-category visibility for suggested markers.
   useEffect(() => {
@@ -312,6 +407,16 @@ export function MapView({
     if (!map || !map.getLayer("suggested-points")) return;
     map.setFilter("suggested-points", suggestedFilter(enabled));
   }, [enabled]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer("for-you-points")) return;
+    map.setLayoutProperty(
+      "for-you-points",
+      "visibility",
+      forYouEnabled ? "visible" : "none"
+    );
+  }, [forYouEnabled]);
 
   function toggle(category: string) {
     setEnabled((current) =>
@@ -323,15 +428,18 @@ export function MapView({
 
   return (
     <div className="grid gap-2">
-      {(categories.length > 0 || tracks.length > 0) && (
+      {(categories.length > 0 || forYou.length > 0 || paths.length > 0) && (
         <div className="flex flex-wrap items-center gap-4 text-sm">
-          {tracks.length > 0 && (
+          {paths.some((path) => path.kind === "climb") && (
             <span className="text-muted-foreground">
-              <span
-                className="mr-1 inline-block h-1 w-4 rounded align-middle"
-                style={{ backgroundColor: TRACK_COLOR }}
-              />
-              GPX tracks
+              <span className="mr-1 inline-block h-1 w-4 rounded align-middle" style={{ backgroundColor: CLIMB_PATH_COLOR }} />
+              Personal tracks
+            </span>
+          )}
+          {paths.some((path) => path.kind === "route") && (
+            <span className="text-muted-foreground">
+              <span className="mr-1 inline-block h-1 w-4 rounded align-middle" style={{ backgroundColor: ROUTE_PATH_COLOR }} />
+              Route geometry
             </span>
           )}
           {categories.length > 0 && (
@@ -354,6 +462,20 @@ export function MapView({
                 </label>
               ))}
             </>
+          )}
+          {forYou.length > 0 && (
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={forYouEnabled}
+                onChange={() => setForYouEnabled((value) => !value)}
+              />
+              <span
+                className="inline-block size-2.5 rounded-full"
+                style={{ backgroundColor: FOR_YOU_COLOR }}
+              />
+              For you
+            </label>
           )}
         </div>
       )}

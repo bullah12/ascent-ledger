@@ -1,10 +1,6 @@
 // Ascent Ledger — Prisma schema
 //
-// Phase 1: User, Climb, Area per docs/PLAN.md §3. Notes:
-// - grade_normalised_score / grade_system are nullable and unused until the
-//   grade engine lands (Phase 2); grades are stored as free text (grade_raw).
-// - No Route model yet (Phase 3), so Climb has no route_id — the route is
-//   free_text_route_name only.
+// Forward-evolved product schema; migrations remain the data-safe history.
 //
 // Connection URLs live in prisma.config.ts (Prisma 7+), sourced from the
 // DATABASE_URL environment variable — never hardcoded here.
@@ -24,6 +20,7 @@ enum Discipline {
   winter
   alpine
   ski_touring
+  hiking
 
   @@schema("ascent_ledger")
 }
@@ -36,6 +33,7 @@ enum GradeSystem {
   wi_ice
   alpine_overall
   ski_touring_scale
+  sac_hiking
 
   @@schema("ascent_ledger")
 }
@@ -58,21 +56,67 @@ enum ClimbSource {
   @@schema("ascent_ledger")
 }
 
+enum PathSource {
+  drawn
+  gpx_upload
+  kml_upload
+  import
+
+  @@schema("ascent_ledger")
+}
+
+enum ClimbVisibility {
+  private
+  public
+
+  @@schema("ascent_ledger")
+}
+
+enum TagKind {
+  terrain
+  character
+  hazard
+  logistics
+
+  @@schema("ascent_ledger")
+}
+
 // Mirrors the Supabase Auth user; id is the Supabase auth.users UUID.
 // Upserted on first authenticated visit to the logbook.
 model User {
-  id          String   @id @db.Uuid
-  email       String   @unique
-  displayName String?  @map("display_name")
-  homeRegion  String?  @map("home_region")
+  id                     String   @id @db.Uuid
+  email                  String   @unique
+  displayName            String?  @map("display_name")
+  homeRegion             String?  @map("home_region")
   // Recommender scoring weights (PLAN.md §6 w1–w4), editable in /settings;
   // null = code defaults (see src/lib/recommender.ts).
-  recommenderWeightsJson Json? @map("recommender_weights_json")
-  createdAt   DateTime @default(now()) @map("created_at")
+  recommenderWeightsJson Json?    @map("recommender_weights_json")
+  createdAt              DateTime @default(now()) @map("created_at")
 
-  climbs Climb[]
+  climbs     Climb[]
+  preference UserPreference?
+  reviews    RouteReview[]
+  routeTags  RouteTag[]
 
   @@map("users")
+  @@schema("ascent_ledger")
+}
+
+model UserPreference {
+  userId                String       @id @map("user_id") @db.Uuid
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredDisciplines  Discipline[] @map("preferred_disciplines")
+  homeRegion            String?      @map("home_region")
+  provisionalGradesJson Json?        @map("provisional_grades_json")
+  gradeWindowsJson      Json?        @map("grade_windows_json")
+  preferredRegions      String[]     @map("preferred_regions")
+  preferredTagSlugs     String[]     @map("preferred_tag_slugs")
+  maxTripLengthDays     Int?         @map("max_trip_length_days")
+  suggestionWeightsJson Json?        @map("suggestion_weights_json")
+  exploreLevel          Float        @default(0.35) @map("explore_level")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  @@map("user_preferences")
   @@schema("ascent_ledger")
 }
 
@@ -147,6 +191,8 @@ model Route {
   gradeNormalisedScore Int?         @map("grade_normalised_score")
   lat                  Float?
   lng                  Float?
+  pathGeojson          Json?        @map("path_geojson")
+  pathSource           PathSource?  @map("path_source")
   lengthM              Int?         @map("length_m")
   pitches              Int?
   description          String?
@@ -155,15 +201,66 @@ model Route {
   externalUrl          String?      @map("external_url")
   externalId           String?      @map("external_id")
   lastSyncedAt         DateTime?    @map("last_synced_at")
+  starterDisciplines   Discipline[] @default([]) @map("starter_disciplines")
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
+  reviewCount          Int          @default(0) @map("review_count")
+  avgRating            Float?       @map("avg_rating")
 
   climbs      Climb[]
   suggestions ClimbRouteSuggestion[]
+  reviews     RouteReview[]
+  routeTags   RouteTag[]
 
-  @@index([name])
   @@unique([externalSource, externalId])
+  @@index([name])
   @@map("routes")
+  @@schema("ascent_ledger")
+}
+
+model RouteReview {
+  id        String    @id @default(uuid()) @db.Uuid
+  routeId   String    @map("route_id") @db.Uuid
+  route     Route     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  text      String?
+  climbedOn DateTime? @map("climbed_on") @db.Date
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([routeId, userId])
+  @@index([routeId, updatedAt])
+  @@map("route_reviews")
+  @@schema("ascent_ledger")
+}
+
+model Tag {
+  id    String  @id @default(uuid()) @db.Uuid
+  slug  String  @unique
+  label String
+  kind  TagKind
+
+  routeTags RouteTag[]
+
+  @@index([kind, label])
+  @@map("tags")
+  @@schema("ascent_ledger")
+}
+
+model RouteTag {
+  routeId   String   @map("route_id") @db.Uuid
+  route     Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  tagId     String   @map("tag_id") @db.Uuid
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([routeId, tagId, userId])
+  @@index([routeId, tagId])
+  @@map("route_tags")
   @@schema("ascent_ledger")
 }
 
@@ -209,31 +306,34 @@ model RouteImportLog {
 
 // A single logged ascent.
 model Climb {
-  id                   String       @id @default(uuid()) @db.Uuid
-  userId               String       @map("user_id") @db.Uuid
-  user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String          @id @default(uuid()) @db.Uuid
+  userId               String          @map("user_id") @db.Uuid
+  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Optional link to a canonical Route; the free-text name stays the
   // display fallback for unlinked climbs.
-  routeId              String?      @map("route_id") @db.Uuid
-  route                Route?       @relation(fields: [routeId], references: [id], onDelete: SetNull)
-  freeTextRouteName    String       @map("free_text_route_name")
+  routeId              String?         @map("route_id") @db.Uuid
+  route                Route?          @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  freeTextRouteName    String          @map("free_text_route_name")
   discipline           Discipline
-  date                 DateTime     @db.Date
-  gradeSystem          GradeSystem? @map("grade_system")
-  gradeRaw             String       @map("grade_raw")
-  gradeNormalisedScore Int?         @map("grade_normalised_score")
-  ascentStyle          AscentStyle  @map("ascent_style")
+  date                 DateTime        @db.Date
+  gradeSystem          GradeSystem?    @map("grade_system")
+  gradeRaw             String          @map("grade_raw")
+  gradeNormalisedScore Int?            @map("grade_normalised_score")
+  ascentStyle          AscentStyle     @map("ascent_style")
   pitches              Int?
-  lengthM              Int?         @map("length_m")
-  areaId               String?      @map("area_id") @db.Uuid
-  area                 Area?        @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  lengthM              Int?            @map("length_m")
+  areaId               String?         @map("area_id") @db.Uuid
+  area                 Area?           @relation(fields: [areaId], references: [id], onDelete: SetNull)
   partners             String[]
   notes                String?
-  photoUrls            String[]     @map("photo_urls")
-  gpxTrackUrl          String?      @map("gpx_track_url")
-  source               ClimbSource  @default(manual)
-  createdAt            DateTime     @default(now()) @map("created_at")
-  updatedAt            DateTime     @updatedAt @map("updated_at")
+  photoUrls            String[]        @map("photo_urls")
+  gpxTrackUrl          String?         @map("gpx_track_url")
+  pathGeojson          Json?           @map("path_geojson")
+  pathSource           PathSource?     @map("path_source")
+  source               ClimbSource     @default(manual)
+  visibility           ClimbVisibility @default(private)
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
 
   suggestions ClimbRouteSuggestion[]
 

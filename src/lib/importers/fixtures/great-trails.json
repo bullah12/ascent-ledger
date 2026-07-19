@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "sgt-fixture-1",
+      "properties": {
+        "name": "Fixture Great Trail",
+        "length_km": 24,
+        "url": "https://www.nature.scot/enjoying-outdoors/routes-explore/scotlands-great-trails"
+      },
+      "geometry": { "type": "LineString", "coordinates": [[-4.0, 56.0], [-3.9, 56.1]] }
+    }
+  ]
+}

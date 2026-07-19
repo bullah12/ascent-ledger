@@ -110,6 +110,18 @@
       { "score": 17, "label": "EX", "aliases": ["EX", "ABO"] }
     ]
   },
+  "sac_hiking": {
+    "label": "SAC hiking",
+    "_note": "Swiss Alpine Club hiking scale. T1–T6 describe increasing terrain, exposure, route-finding and alpine-skill demands; they are ordinal within this system only.",
+    "entries": [
+      { "score": 1, "label": "T1", "aliases": ["T1"] },
+      { "score": 2, "label": "T2", "aliases": ["T2"] },
+      { "score": 3, "label": "T3", "aliases": ["T3"] },
+      { "score": 4, "label": "T4", "aliases": ["T4"] },
+      { "score": 5, "label": "T5", "aliases": ["T5"] },
+      { "score": 6, "label": "T6", "aliases": ["T6"] }
+    ]
+  },
   "french_sport": {
     "label": "French sport",
     "_note": "STUB — no ladder yet; grades in this system show as ungraded. No BMG rule thresholds use it.",

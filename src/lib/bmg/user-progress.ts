@@ -18,7 +18,7 @@ export async function getUserProgressAndSuggestions(
   hasUnverified: boolean;
   categorySuggestions: CategorySuggestions[];
 }> {
-  const [categories, climbs] = await Promise.all([
+  const [categories, climbs, preference] = await Promise.all([
     prisma.bmgCategory.findMany({
       orderBy: { sortOrder: "asc" },
       include: { rules: { orderBy: { sortOrder: "asc" } } },
@@ -35,6 +35,10 @@ export async function getUserProgressAndSuggestions(
         gradeNormalisedScore: true,
         area: { select: { id: true, name: true, region: true, country: true } },
       },
+    }),
+    prisma.userPreference.findUnique({
+      where: { userId: user.id },
+      select: { provisionalGradesJson: true },
     }),
   ]);
 
@@ -56,7 +60,8 @@ export async function getUserProgressAndSuggestions(
         met: metByRuleId.get(rule.id) ?? false,
       })),
     })),
-    parseWeights(user.recommenderWeightsJson)
+    parseWeights(user.recommenderWeightsJson),
+    preference?.provisionalGradesJson
   );
 
   return {

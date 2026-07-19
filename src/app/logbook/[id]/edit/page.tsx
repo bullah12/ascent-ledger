@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gradeSystemsByDiscipline } from "@/lib/grades";
 import { updateClimb } from "../../actions";
 import { ClimbForm } from "../../climb-form";
+import { lineStringOrNull } from "@/lib/tracks";
 
 export default async function EditClimbPage({
   params,
@@ -11,7 +12,7 @@ export default async function EditClimbPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
 
   const climb = await prisma.climb.findFirst({
     where: { id, userId: user.id },
@@ -42,7 +43,9 @@ export default async function EditClimbPage({
         action={boundUpdate}
         submitLabel="Save changes"
         existingPhotos={climb.photoUrls}
-        existingGpxUrl={climb.gpxTrackUrl}
+        existingTrackUrl={climb.gpxTrackUrl}
+        initialPath={lineStringOrNull(climb.pathGeojson)}
+        initialPathSource={climb.pathSource}
         linkedRoute={
           climb.route
             ? {
@@ -66,6 +69,7 @@ export default async function EditClimbPage({
           ascentStyle: climb.ascentStyle,
           area: climb.area?.name ?? "",
           notes: climb.notes ?? "",
+          visibility: climb.visibility,
         }}
       />
     </main>
