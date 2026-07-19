@@ -250,6 +250,120 @@ changes you made and why.
 
 ---
 
+## Phase 8 — Planning prompt (map tracing, ingestion, onboarding, community, general suggestions)
+
+Unlike Phases 0-7, this one asks Fable to *propose a plan* (new PLAN.md
+phase(s), data-model deltas, sequencing, open questions) rather than write
+code — review its answer, decide the open questions (especially D's
+public/private question), then turn the agreed phases into their own
+implementation prompts in this same file.
+
+```
+Continuing Ascent Ledger. Phases 0–7 (docs/PLAN.md §7) are shipped: auth,
+logbook CRUD, grade engine + BMG rules dashboard, Route/RouteImportLog
+tables, MapLibre map view, OpenBeta + Camptocamp importers, rule-based
+recommender (src/lib/recommender.ts), GPX/photo upload, PWA.
+
+Re-read docs/PLAN.md in full first, especially §3 (data model), §5 (route
+data-source strategy), §6 (recommender algorithm), and the "Explicit
+non-features (v1)" list in §1 — one of the asks below directly reverses an
+item on that list, flagged explicitly.
+
+I want to extend the product in five directions. For THIS message, do NOT
+write any code or migrations — I want a written plan only: new PLAN.md
+phase(s) (in the existing §7 table format), the data-model deltas each
+needs, which existing modules/files each touches, sequencing/dependencies,
+and open questions for me to decide. Treat it like a Phase 8+ proposal I
+can review and then feed back to you one phase at a time, same as
+Phases 0-7 were.
+
+A) Map-based trail drawing + auto-import
+   - Let a user trace a route/trail directly on the existing MapLibre map
+     (src/app/map/map-view.tsx) when adding a Climb or a Route, saving the
+     traced line as geometry (not just a lat/lng point).
+   - Also let them import a track (GPX, and whatever else is reasonable —
+     e.g. KML) and have it auto-plot instead of tracing by hand.
+   - Propose: what geometry field/type this needs on Route (and/or Climb),
+     how it relates to the gpx_track_url field that already exists, and
+     which drawing library/approach fits MapLibre (don't just say
+     "Leaflet" — we already committed to MapLibre in §2).
+
+B) Broaden the route/trail ingestion engine
+   - The importer pattern (src/lib/importers/{openbeta,camptocamp,sync,types}.ts)
+     currently covers rock (OpenBeta) and alpine/ski/winter (Camptocamp).
+     Propose additional open/permissive-licence sources worth adding as new
+     adapters to that same pluggable pattern — e.g. OSM/Overpass for hiking
+     trails, national park or trail-agency open datasets, or similar — so
+     candidate pools (for both the BMG recommender in §6 and the new
+     general engine in E below) are bigger and more diverse, especially for
+     hiking/trail-style routes which aren't well covered by the current two
+     sources.
+   - Apply the same §5 legal/ToS bar to any new source you propose (open
+     licence only, attribution + last_synced_at, no bulk-scraping ToS-
+     restricted sites) — call out any source you considered and rejected.
+
+C) Fix cold-start / onboarding
+   - Right now a brand-new user with an empty logbook gets nothing useful:
+     the recommender needs existing climbs to establish "current_max"
+     (§6), and there's no beginner-facing explanation of grades, route
+     types, or disciplines anywhere in the UI.
+   - Propose: a no-history recommendation path (e.g. popular/curated
+     starter routes per discipline/region), plus where a lightweight
+     "what does this grade/route type mean" explainer belongs (onboarding
+     flow vs. inline tooltips vs. a help page) without turning this into a
+     big content project.
+
+D) Community layer: public trails, reviews, tags — reverses a stated
+   non-feature
+   - I want users to be able to view other people's completed trails/routes
+     and how they reviewed them, and to have tags/keywords on a trail that
+     act as an at-a-glance summary.
+   - §1 currently says v1 explicitly excludes social feed / following /
+     public profiles. Don't just override that — present it as a decision
+     point: what's the smallest version of "view others' trails + reviews +
+     tags" that doesn't require a full social feed (e.g. public-by-default
+     vs. opt-in-public Routes/Climbs, a Review/Rating model tied to Route
+     rather than to a user's private Climb log, a Tag/keyword model on
+     Route). Flag any privacy or schema implications for the existing
+     private-by-default Climb model.
+
+E) General history + preference-based suggestion engine (distinct from the
+   BMG-gap recommender in §6)
+   - §6's recommender only exists to close a specific unmet BMG rule — it
+     has no concept of a standing user profile. I want a second, broader
+     engine: given (1) the routes/trails a user has already completed
+     (grades, disciplines, areas, and — once D exists — tags they engaged
+     with) and (2) explicit preferences a user sets somewhere (e.g.
+     preferred disciplines, grade range, regions, terrain/tag preferences,
+     trip length), suggest routes/trails that fit — independent of whether
+     the user cares about BMG progress at all.
+   - Propose: does this live as a second mode inside src/lib/recommender.ts,
+     or a separate module (e.g. src/lib/suggestions.ts) that the BMG
+     recommender can eventually share scoring primitives with? What's the
+     minimal user-preferences data model (a settings table/JSON, similar
+     in spirit to the existing recommenderWeightsJson on User)? How does
+     "based on completed routes" scoring differ from simple grade-window
+     matching already in §6 — e.g. should it weight toward areas/tags the
+     user returns to, not just grade proximity?
+   - This depends on B (bigger candidate pool) to be useful, and benefits
+     from D's tags for preference matching — say so explicitly if your plan
+     sequences it after either.
+
+For each of A-E, tell me: does it stand alone as its own phase, or does it
+depend on another? Suggest a phase ordering, and where E and the existing
+§6 recommender should end up relative to each other architecturally.
+
+Do NOT: implement anything yet, don't touch existing Phase 0-7 schemas or
+code, don't unilaterally decide the public/private question in D — give me
+the options and your recommendation, not a fait accompli.
+
+When done: give me the proposed phase table rows (append-style, like §7),
+the data-model deltas per phase, and the open decisions you need from me
+before any phase becomes buildable.
+```
+
+---
+
 ## General prompting tips for the rest of the build
 
 - If Fable's response for a phase seems to have drifted into scope from a
