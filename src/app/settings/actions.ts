@@ -19,7 +19,13 @@ export async function saveWeights(formData: FormData): Promise<void> {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { recommenderWeightsJson: weights },
+    data: {
+      recommenderWeightsJson: weights,
+      displayName: (() => {
+        const value = formData.get("displayName");
+        return typeof value === "string" ? value.trim().slice(0, 80) || null : null;
+      })(),
+    },
   });
 
   revalidatePath("/dashboard");

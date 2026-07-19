@@ -69,6 +69,7 @@ export default async function EditClimbPage({
           ascentStyle: climb.ascentStyle,
           area: climb.area?.name ?? "",
           notes: climb.notes ?? "",
+          visibility: climb.visibility,
         }}
       />
     </main>

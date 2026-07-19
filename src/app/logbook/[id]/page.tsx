@@ -84,6 +84,14 @@ export default async function ClimbDetailPage({
           }
         />
         <Fact label="Style" value={ascentStyleLabels[climb.ascentStyle]} />
+        <Fact
+          label="Visibility"
+          value={
+            <Badge variant={climb.visibility === "public" ? "default" : "outline"}>
+              {climb.visibility === "public" ? "Public tick" : "Private"}
+            </Badge>
+          }
+        />
         {climb.pitches !== null && <Fact label="Pitches" value={climb.pitches} />}
         {climb.lengthM !== null && <Fact label="Length" value={`${climb.lengthM} m`} />}
         {climb.partners.length > 0 && (

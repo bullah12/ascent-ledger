@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowUp } from "lucide-react";
-import type { AscentStyle, Discipline } from "@/generated/prisma/enums";
+import type {
+  AscentStyle,
+  ClimbVisibility,
+  Discipline,
+} from "@/generated/prisma/enums";
 import { ascentStyleLabels, disciplineLabels } from "@/lib/climbs/labels";
 import { deleteClimb } from "./actions";
 import {
@@ -37,6 +41,7 @@ export type ClimbRow = {
   ascentStyle: AscentStyle;
   areaName: string | null;
   notes: string | null;
+  visibility: ClimbVisibility;
 };
 
 export function ClimbTable({ climbs }: { climbs: ClimbRow[] }) {
@@ -64,6 +69,7 @@ export function ClimbTable({ climbs }: { climbs: ClimbRow[] }) {
               <Badge variant="secondary" className="shrink-0">
                 {disciplineLabels[climb.discipline]}
               </Badge>
+              {climb.visibility === "public" && <Badge>public</Badge>}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {climb.date} · {climb.gradeRaw} ·{" "}

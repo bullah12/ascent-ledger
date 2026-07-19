@@ -45,6 +45,20 @@ export default async function SettingsPage() {
       </p>
 
       <form action={saveWeights} className="grid gap-4">
+        <div className="grid gap-1 border-b pb-5">
+          <Label htmlFor="displayName">Public display name</Label>
+          <p className="text-xs text-muted-foreground">
+            Shown on reviews and public ticks. If blank, others see “Ascent Ledger member”.
+            Your email is never shown.
+          </p>
+          <Input
+            id="displayName"
+            name="displayName"
+            maxLength={80}
+            defaultValue={user.displayName ?? ""}
+            className="max-w-sm"
+          />
+        </div>
         {FIELDS.map((field) => (
           <div key={field.key} className="grid gap-1">
             <Label htmlFor={field.key}>{field.label}</Label>

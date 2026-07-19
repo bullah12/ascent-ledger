@@ -1,0 +1,37 @@
+{
+  "tags": [
+    { "slug": "slab", "label": "Slab", "kind": "terrain" },
+    { "slug": "crack", "label": "Crack", "kind": "terrain" },
+    { "slug": "ridge", "label": "Ridge", "kind": "terrain" },
+    { "slug": "gully", "label": "Gully", "kind": "terrain" },
+    { "slug": "icefall", "label": "Icefall", "kind": "terrain" },
+    { "slug": "mixed", "label": "Mixed", "kind": "terrain" },
+    { "slug": "glacier", "label": "Glacier", "kind": "terrain" },
+    { "slug": "scree", "label": "Scree", "kind": "terrain" },
+    { "slug": "woodland", "label": "Woodland", "kind": "terrain" },
+    { "slug": "coastal", "label": "Coastal", "kind": "terrain" },
+
+    { "slug": "sustained", "label": "Sustained", "kind": "character" },
+    { "slug": "technical", "label": "Technical", "kind": "character" },
+    { "slug": "exposed", "label": "Exposed", "kind": "character" },
+    { "slug": "remote", "label": "Remote", "kind": "character" },
+    { "slug": "scenic", "label": "Scenic", "kind": "character" },
+    { "slug": "beginner-friendly", "label": "Beginner friendly", "kind": "character" },
+    { "slug": "committing", "label": "Committing", "kind": "character" },
+    { "slug": "pumpy", "label": "Pumpy", "kind": "character" },
+
+    { "slug": "avalanche", "label": "Avalanche terrain", "kind": "hazard" },
+    { "slug": "rockfall", "label": "Rockfall", "kind": "hazard" },
+    { "slug": "crevasses", "label": "Crevasses", "kind": "hazard" },
+    { "slug": "loose-rock", "label": "Loose rock", "kind": "hazard" },
+    { "slug": "tidal", "label": "Tidal", "kind": "hazard" },
+    { "slug": "river-crossing", "label": "River crossing", "kind": "hazard" },
+
+    { "slug": "public-transport", "label": "Public transport", "kind": "logistics" },
+    { "slug": "camping", "label": "Camping nearby", "kind": "logistics" },
+    { "slug": "refuge", "label": "Refuge", "kind": "logistics" },
+    { "slug": "permit-required", "label": "Permit required", "kind": "logistics" },
+    { "slug": "seasonal-access", "label": "Seasonal access", "kind": "logistics" },
+    { "slug": "dog-friendly", "label": "Dog friendly", "kind": "logistics" }
+  ]
+}

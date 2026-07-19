@@ -1,7 +1,7 @@
 import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gradeSystemsByDiscipline } from "@/lib/grades";
-import { AscentStyle } from "@/generated/prisma/enums";
+import { AscentStyle, ClimbVisibility } from "@/generated/prisma/enums";
 import { createClimb } from "../actions";
 import { ClimbForm } from "../climb-form";
 
@@ -48,6 +48,7 @@ export default async function NewClimbPage({
           ascentStyle: AscentStyle.led,
           area: route.area?.name ?? "",
           notes: "",
+          visibility: ClimbVisibility.private,
         } : undefined}
       />
     </main>

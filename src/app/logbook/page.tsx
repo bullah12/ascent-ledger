@@ -52,6 +52,7 @@ export default async function LogbookPage() {
     ascentStyle: climb.ascentStyle,
     areaName: climb.area?.name ?? null,
     notes: climb.notes,
+    visibility: climb.visibility,
   }));
 
   return (

@@ -2,7 +2,12 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { AscentStyle, Discipline, GradeSystem } from "@/generated/prisma/enums";
+import {
+  AscentStyle,
+  ClimbVisibility,
+  Discipline,
+  GradeSystem,
+} from "@/generated/prisma/enums";
 import { ascentStyleLabels, disciplineLabels } from "@/lib/climbs/labels";
 import { gradeSystemLabels, gradeSystemsByDiscipline } from "@/lib/grades";
 import type { ClimbFormState } from "./actions";
@@ -26,6 +31,7 @@ export type ClimbFormValues = {
   ascentStyle: AscentStyle;
   area: string;
   notes: string;
+  visibility: ClimbVisibility;
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -101,6 +107,23 @@ export function ClimbForm({
         />
         <FieldError message={errors.routeName} />
       </div>
+
+      <label className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+        <input
+          type="checkbox"
+          name="visibility"
+          value={ClimbVisibility.public}
+          defaultChecked={defaultValues?.visibility === ClimbVisibility.public}
+          className="mt-1"
+        />
+        <span>
+          <span className="block font-medium">Show as a public tick</span>
+          <span className="text-muted-foreground">
+            Opt in to showing only your display name, route name, date, grade,
+            and ascent style on the linked route. Notes, partners, photos, and tracks stay private.
+          </span>
+        </span>
+      </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">

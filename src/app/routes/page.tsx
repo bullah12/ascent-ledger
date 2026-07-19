@@ -57,6 +57,7 @@ export default async function RoutesPage() {
               <TableHead>Discipline</TableHead>
               <TableHead>Grade</TableHead>
               <TableHead>Area</TableHead>
+              <TableHead>Community</TableHead>
               <TableHead>Map</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -72,6 +73,11 @@ export default async function RoutesPage() {
                 <TableCell>{disciplineLabels[route.discipline]}</TableCell>
                 <TableCell>{route.gradeRaw ?? "—"}</TableCell>
                 <TableCell>{route.area?.name ?? "—"}</TableCell>
+                <TableCell>
+                  {route.avgRating === null
+                    ? "—"
+                    : `${route.avgRating.toFixed(1)}/5 (${route.reviewCount})`}
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     {route.lat !== null && route.lng !== null && (

@@ -2,8 +2,8 @@
 
 Personal climbing logbook and BMG-standard progress tracker. See
 `docs/PLAN.md` for the full product spec and phased roadmap. The current app
-includes Phases 0–10, including open trail ingestion, onboarding, and
-auditable starter packs.
+includes Phases 0–11, including open trail ingestion, onboarding, auditable
+starter packs, and private-by-default route community features.
 
 ## Stack
 
@@ -29,6 +29,7 @@ npm install                 # also runs `prisma generate`
 npx prisma migrate deploy   # applies prisma/migrations to your database
 npm run db:seed             # BMG rules
 npm run db:seed:starters    # idempotent open-source starter routes
+npm run db:seed:tags        # idempotent curated route-tag vocabulary
 npm run dev
 ```
 
@@ -54,6 +55,7 @@ climbs.
 | `npm run backfill:tracks` | Populate missing Climb `path_geojson` values |
 | `npm run sync:routes -- --max=200` | Run each configured route importer with a per-source cap |
 | `npm run db:seed:starters` | Upsert the verified starter-route pack and flags |
+| `npm run db:seed:tags` | Upsert the curated terrain/character/hazard/logistics tags |
 | `npx prisma generate` | Regenerate the Prisma client (into `src/generated/prisma`, gitignored) |
 
 The weekly sync keeps OpenBeta and Camptocamp compatibility and adds bounded
@@ -76,6 +78,14 @@ completion signal; optional self-reported grades are provisional and are used
 only until a real climb exists in that grade system. Existing users are
 backfilled as complete by the Phase 10 migration. The starter seed is audited
 in `docs/starter_routes.seed.json`; it never creates `Climb` rows.
+
+Community reviews and route tags are visible to other users, while climbs
+remain `private` by database default. A climb appears in route-centric public
+ticks only after explicit per-climb opt-in, and the public projection contains
+only display name/fallback, route name, date, grade, and ascent style. Supabase
+RLS restricts writes to owners; private preferences and sensitive climb fields
+are never included in anonymous grants. Run the Phase 11 migration before the
+tag seed so the enum and tables exist.
 
 ## Project layout
 

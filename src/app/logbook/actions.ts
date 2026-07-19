@@ -18,7 +18,7 @@ import {
 import { climbInputSchema, type ClimbInput } from "@/lib/climbs/validation";
 import { normaliseGrade } from "@/lib/grades";
 import { Prisma } from "@/generated/prisma/client";
-import { PathSource } from "@/generated/prisma/enums";
+import { ClimbVisibility, PathSource } from "@/generated/prisma/enums";
 import type { LineString } from "geojson";
 import {
   TrackError,
@@ -46,6 +46,10 @@ function parseForm(formData: FormData):
     area: formData.get("area") ?? undefined,
     notes: formData.get("notes") ?? undefined,
     routeId: formData.get("routeId") || undefined,
+    visibility:
+      formData.get("visibility") === ClimbVisibility.public
+        ? ClimbVisibility.public
+        : ClimbVisibility.private,
   });
 
   if (!result.success) {
@@ -76,6 +80,7 @@ function toClimbData(input: ClimbInput, areaId: string | null) {
     ascentStyle: input.ascentStyle,
     areaId,
     notes: input.notes || null,
+    visibility: input.visibility,
   };
 }
 
@@ -205,6 +210,7 @@ export async function createClimb(
 
   revalidatePath("/logbook");
   revalidatePath("/map");
+  if (parsed.input.routeId) revalidatePath(`/routes/${parsed.input.routeId}`);
   redirect("/logbook");
 }
 
@@ -222,7 +228,7 @@ export async function updateClimb(
   // Ownership check up front — attachment handling needs the current row.
   const existing = await prisma.climb.findFirst({
     where: { id: climbId, userId: user.id },
-    select: { photoUrls: true, gpxTrackUrl: true },
+    select: { photoUrls: true, gpxTrackUrl: true, routeId: true },
   });
   if (!existing) {
     return { error: "This climb no longer exists." };
@@ -272,6 +278,8 @@ export async function updateClimb(
 
   revalidatePath("/logbook");
   revalidatePath("/map");
+  if (existing.routeId) revalidatePath(`/routes/${existing.routeId}`);
+  if (parsed.input.routeId) revalidatePath(`/routes/${parsed.input.routeId}`);
   redirect("/logbook");
 }
 
@@ -330,9 +338,13 @@ export async function deleteClimb(formData: FormData): Promise<void> {
   const climbId = formData.get("climbId");
   if (typeof climbId !== "string" || !climbId) return;
 
-  await prisma.climb.deleteMany({
+  const existing = await prisma.climb.findFirst({
     where: { id: climbId, userId: user.id },
+    select: { routeId: true },
   });
+  if (!existing) return;
+  await prisma.climb.deleteMany({ where: { id: climbId, userId: user.id } });
 
   revalidatePath("/logbook");
+  if (existing.routeId) revalidatePath(`/routes/${existing.routeId}`);
 }
