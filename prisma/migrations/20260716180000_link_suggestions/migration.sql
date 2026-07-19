@@ -1,3 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS "ascent_ledger";
+SET search_path = "ascent_ledger", public;
+
 -- CreateEnum
 CREATE TYPE "SuggestionStatus" AS ENUM ('pending', 'accepted', 'rejected');
 

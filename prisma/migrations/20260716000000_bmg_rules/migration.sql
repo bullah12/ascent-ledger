@@ -1,3 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS "ascent_ledger";
+SET search_path = "ascent_ledger", public;
+
 -- CreateTable
 CREATE TABLE "bmg_categories" (
     "id" UUID NOT NULL,

@@ -16,6 +16,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["ascent_ledger"]
 }
 
 enum Discipline {
@@ -23,6 +24,8 @@ enum Discipline {
   winter
   alpine
   ski_touring
+
+  @@schema("ascent_ledger")
 }
 
 enum GradeSystem {
@@ -33,6 +36,8 @@ enum GradeSystem {
   wi_ice
   alpine_overall
   ski_touring_scale
+
+  @@schema("ascent_ledger")
 }
 
 enum AscentStyle {
@@ -41,12 +46,16 @@ enum AscentStyle {
   seconded
   solo
   roped_solo
+
+  @@schema("ascent_ledger")
 }
 
 enum ClimbSource {
   manual
   csv_import
   ukc_import
+
+  @@schema("ascent_ledger")
 }
 
 // Mirrors the Supabase Auth user; id is the Supabase auth.users UUID.
@@ -64,6 +73,7 @@ model User {
   climbs Climb[]
 
   @@map("users")
+  @@schema("ascent_ledger")
 }
 
 // Crag / mountain / massif. Phase 1 only sets name (find-or-create from the
@@ -81,6 +91,7 @@ model Area {
   routes Route[]
 
   @@map("areas")
+  @@schema("ascent_ledger")
 }
 
 // BMG prerequisite category (one per discipline). Editable config, seeded
@@ -95,6 +106,7 @@ model BmgCategory {
   rules BmgRule[]
 
   @@map("bmg_categories")
+  @@schema("ascent_ledger")
 }
 
 // Editable BMG rules table — thresholds live here, not in code, so a wrong
@@ -119,6 +131,7 @@ model BmgRule {
 
   @@index([categoryId])
   @@map("bmg_rules")
+  @@schema("ascent_ledger")
 }
 
 // Canonical route entry (manually added in Phase 3; external importers
@@ -151,12 +164,15 @@ model Route {
   @@index([name])
   @@unique([externalSource, externalId])
   @@map("routes")
+  @@schema("ascent_ledger")
 }
 
 enum SuggestionStatus {
   pending
   accepted
   rejected
+
+  @@schema("ascent_ledger")
 }
 
 // A fuzzy name+area match between a free-text Climb and an imported Route,
@@ -175,6 +191,7 @@ model ClimbRouteSuggestion {
   @@unique([climbId, routeId])
   @@index([status])
   @@map("climb_route_suggestions")
+  @@schema("ascent_ledger")
 }
 
 // One row per importer run (Phase 4 sync jobs; manual CSV route imports).
@@ -187,6 +204,7 @@ model RouteImportLog {
   errorsJson    Json?    @map("errors_json")
 
   @@map("route_import_logs")
+  @@schema("ascent_ledger")
 }
 
 // A single logged ascent.
@@ -221,4 +239,5 @@ model Climb {
 
   @@index([userId, date])
   @@map("climbs")
+  @@schema("ascent_ledger")
 }

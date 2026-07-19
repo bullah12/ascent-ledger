@@ -1,3 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS "ascent_ledger";
+SET search_path = "ascent_ledger", public;
+
 -- AlterTable
 ALTER TABLE "climbs" ADD COLUMN     "route_id" UUID;
 

@@ -1,5 +1,6 @@
 -- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
+CREATE SCHEMA IF NOT EXISTS "ascent_ledger";
+SET search_path = "ascent_ledger", public;
 
 -- CreateEnum
 CREATE TYPE "Discipline" AS ENUM ('rock', 'winter', 'alpine', 'ski_touring');
