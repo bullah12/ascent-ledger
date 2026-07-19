@@ -7,6 +7,12 @@ import {
 } from "@/lib/bmg/engine";
 import { gradeLabelForScore, gradeSystemsByDiscipline } from "@/lib/grades";
 import { normaliseText } from "@/lib/matching";
+import {
+  haversineKm,
+  proximityScore,
+  ratingScore,
+  roundScore,
+} from "@/lib/scoring";
 
 // Rule-based route recommender (PLAN.md §6 — no ML, deliberately simple
 // and debuggable). For each unmet BMG sub-rule:
@@ -101,19 +107,6 @@ const GRADE_WINDOW_ABOVE = 2;
 const DISTANCE_NORM_KM = 500; // penalty saturates at this distance
 const TOP_N = 5;
 
-function haversineKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number }
-): number {
-  const rad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * rad;
-  const dLng = (b.lng - a.lng) * rad;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.sqrt(h));
-}
-
 /** User's best normalised score in one grade system, from their climbs. */
 function currentMaxScore(
   climbs: EngineClimb[],
@@ -207,11 +200,10 @@ function recommendForRule(
       }
       // Best fit = one step above current max ("next logical grade").
       const target = resolvedAnchor.score !== null ? resolvedAnchor.score + 1 : anchor;
-      gradeFit = 1 - Math.abs(s - target) / (GRADE_WINDOW_ABOVE + 1);
+      gradeFit = proximityScore(s, target, GRADE_WINDOW_ABOVE + 1);
     }
 
-    const quality =
-      route.qualityRating !== null ? (route.qualityRating - 1) / 4 : 0.5;
+    const quality = ratingScore(route.qualityRating);
 
     const areaKey = route.area
       ? normaliseText(route.area.name)
@@ -243,7 +235,7 @@ function recommendForRule(
       externalUrl: route.externalUrl,
       lat: route.lat,
       lng: route.lng,
-      score: Math.round(score * 1000) / 1000,
+      score: roundScore(score),
       why: whyLine({
         gradeFit,
         quality,

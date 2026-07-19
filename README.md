@@ -2,8 +2,9 @@
 
 Personal climbing logbook and BMG-standard progress tracker. See
 `docs/PLAN.md` for the full product spec and phased roadmap. The current app
-includes Phases 0–11, including open trail ingestion, onboarding, auditable
-starter packs, and private-by-default route community features.
+includes Phases 0–12, including open trail ingestion, onboarding, auditable
+starter packs, private-by-default route community features, and the separate
+preference-driven “For you” engine.
 
 ## Stack
 
@@ -86,6 +87,15 @@ only display name/fallback, route name, date, grade, and ascent style. Supabase
 RLS restricts writes to owners; private preferences and sensitive climb fields
 are never included in anonymous grants. Run the Phase 11 migration before the
 tag seed so the enum and tables exist.
+
+`/for-you` scores the route database from recency-weighted completed-climb
+history and explicit settings. Grade comfort uses a recent weighted band rather
+than an all-time maximum; community rating is preferred with source quality as
+fallback; completed routes are excluded. The default explore level is `0.35`
+(mildly familiar). Route distance and pitches provide the documented trip-day
+proxy (25 km or eight pitches per day). All terms are normalised to 0–1 and
+ties are ordered by route name then ID. These settings and weights are stored
+separately from the BMG gap recommender, whose dashboard behavior is unchanged.
 
 ## Project layout
 

@@ -9,17 +9,25 @@ import {
   type ClimbFeature,
   type StoredPath,
   type SuggestedFeature,
+  type ForYouFeature,
 } from "./map-view";
 import { lineStartPoint, lineStringOrNull } from "@/lib/tracks";
 import {
   sourceAttribution,
   sourceAttributions,
 } from "@/lib/importers/source-attribution";
+import { getForYouSuggestions } from "@/lib/suggestions";
 
 export default async function MapPage() {
   const user = await requireOnboardedUser();
 
-  const [userClimbs, totalClimbs, { categorySuggestions }, routesWithPaths] = await Promise.all([
+  const [
+    userClimbs,
+    totalClimbs,
+    { categorySuggestions },
+    routesWithPaths,
+    forYouSuggestions,
+  ] = await Promise.all([
     prisma.climb.findMany({
       where: { userId: user.id },
       select: {
@@ -56,6 +64,7 @@ export default async function MapPage() {
       orderBy: { updatedAt: "desc" },
       take: 500,
     }),
+    getForYouSuggestions(prisma, user.id),
   ]);
 
   const features: ClimbFeature[] = userClimbs.flatMap((climb) => {
@@ -127,6 +136,19 @@ export default async function MapPage() {
     }
   }
   const suggested = [...suggestedById.values()];
+  const forYou: ForYouFeature[] = forYouSuggestions.flatMap((suggestion) =>
+    suggestion.lat === null || suggestion.lng === null
+      ? []
+      : [{
+          routeId: suggestion.routeId,
+          lat: suggestion.lat,
+          lng: suggestion.lng,
+          name: suggestion.name,
+          gradeRaw: suggestion.gradeRaw,
+          areaName: suggestion.areaName,
+          why: suggestion.why,
+        }]
+  );
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 p-4 sm:p-6">
@@ -140,7 +162,7 @@ export default async function MapPage() {
         </p>
       </div>
 
-      <MapView climbs={features} suggested={suggested} paths={paths} />
+      <MapView climbs={features} suggested={suggested} forYou={forYou} paths={paths} />
 
       {routeAttributions.length > 0 && (
         <p className="mt-2 text-xs text-muted-foreground">

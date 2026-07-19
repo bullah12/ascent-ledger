@@ -45,6 +45,7 @@ export default async function proxy(request: NextRequest) {
     "/routes",
     "/map",
     "/settings",
+    "/for-you",
     "/onboarding",
   ];
   if (
