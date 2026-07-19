@@ -1,5 +1,7 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
+import type { GradeSystem } from "@/generated/prisma/enums";
 import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { CategoryProgress, RuleProgress } from "@/lib/bmg/engine";
@@ -16,9 +18,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { GradeHint } from "@/components/grade-hint";
 import { getStarterPacks, type StarterPack } from "@/lib/starters";
 import { disciplineLabels } from "@/lib/climbs/labels";
+import { gradeLadder, gradeSystemLabels } from "@/lib/grades";
+import { DashboardTabs } from "./dashboard-tabs";
 
 function StarterPacks({ packs }: { packs: StarterPack[] }) {
   if (packs.length === 0) {
@@ -109,7 +112,6 @@ function RuleRow({
           {rule.thresholdLabel ? (
             <span className="text-muted-foreground">
               {" · "}{rule.thresholdLabel}+
-              {rule.gradeSystem && <GradeHint system={rule.gradeSystem} />}
             </span>
           ) : null}
         </p>
@@ -134,6 +136,110 @@ function RuleRow({
         {rule.notes.length > 0 && <> · {rule.notes.join(" · ")}</>}
       </p>
       <SuggestedRoutes suggestions={suggestions} />
+    </div>
+  );
+}
+
+function InfoSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Card className="gap-0 overflow-hidden py-0">
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+          <h2 className="font-semibold">{title}</h2>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t px-5 py-4 text-sm text-muted-foreground">
+          {children}
+        </div>
+      </details>
+    </Card>
+  );
+}
+
+function DashboardInfo({
+  progress,
+  hasUnverified,
+}: {
+  progress: CategoryProgress[];
+  hasUnverified: boolean;
+}) {
+  const gradeSystems = Array.from(
+    new Set(
+      progress
+        .flatMap((category) => category.rules.map((rule) => rule.gradeSystem))
+        .filter((system): system is GradeSystem => system !== null),
+    ),
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold">About your BMG progress</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Expand only the section you need. This guidance is kept here so it
+          does not cover progress details while you review a category.
+        </p>
+      </div>
+
+      <InfoSection title="How progress is calculated">
+        <p>
+          Each category compares eligible climbs in your logbook with the
+          configured BMG prerequisite rules. A climb only counts toward a
+          graded rule when its grade system and normalised grade match that
+          rule. Percentages show completed rule requirements, not a general
+          assessment of readiness.
+        </p>
+      </InfoSection>
+
+      <InfoSection title="Grade systems used on this dashboard">
+        {gradeSystems.length === 0 ? (
+          <p>No graded BMG rules are currently loaded.</p>
+        ) : (
+          <div className="space-y-3">
+            {gradeSystems.map((system) => {
+              const ladder = gradeLadder(system);
+              return (
+                <details key={system} className="rounded-md border bg-background p-3">
+                  <summary className="cursor-pointer font-medium text-foreground">
+                    {gradeSystemLabels[system]}
+                  </summary>
+                  <p className="mt-2 text-xs">
+                    {ladder._note ?? "Grades are ordinal within this system only."}
+                  </p>
+                  {ladder.entries.length > 0 && (
+                    <p className="mt-2 text-xs text-foreground">
+                      {ladder.entries.map((entry) => entry.label).join(" · ")}
+                    </p>
+                  )}
+                </details>
+              );
+            })}
+            <Link href="/help/grades" className="inline-block underline">
+              Open the complete grade guide
+            </Link>
+          </div>
+        )}
+      </InfoSection>
+
+      <InfoSection title="Suggested routes">
+        <p>
+          Suggestions shown beneath incomplete rules are chosen by the BMG gap
+          engine to help address that specific requirement. They are separate
+          from the preference-based recommendations on the{" "}
+          <Link href="/for-you" className="underline">For you</Link> page.
+        </p>
+      </InfoSection>
+
+      <InfoSection title="Rule confidence and data quality">
+        <p>
+          {hasUnverified
+            ? "Rules marked unverified use draft numbers from the source seed and should be checked against the current BMG prerequisites. "
+            : "No currently loaded rules are marked unverified. "}
+          Region and terrain constraints are enforced only when the relevant
+          area data is present. Climbs with unrecognised grades remain visible
+          in the logbook but do not count toward graded rules.
+        </p>
+      </InfoSection>
     </div>
   );
 }
@@ -222,42 +328,36 @@ export default async function DashboardPage() {
         </form>
       </div>
 
-      {climbCount === 0 && <StarterPacks packs={starterPacks} />}
-
-      {!hasRules ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No BMG rules loaded</CardTitle>
-            <CardDescription>
-              The rules table is empty. Run <code>npm run db:seed</code> to
-              load the categories and rules from{" "}
-              <code>docs/bmg_rules.seed.json</code>.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {progress.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                suggestionsByRule={suggestionsByRule}
-              />
-            ))}
-          </div>
-          {hasUnverified && (
-            <p className="mt-4 text-xs text-muted-foreground">
-              Rules marked <span className="text-amber-600">unverified</span>{" "}
-              use draft numbers from an automated fetch of the BMG
-              prerequisites page — check them against the live page and edit
-              the rules table (see docs/bmg_rules.seed.json). Region and
-              terrain constraints are only enforced where your logged areas
-              carry that data.
-            </p>
-          )}
-        </>
-      )}
+      <DashboardTabs
+        progress={
+          <>
+            {climbCount === 0 && <StarterPacks packs={starterPacks} />}
+            {!hasRules ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>No BMG rules loaded</CardTitle>
+                  <CardDescription>
+                    The rules table is empty. Run <code>npm run db:seed</code> to
+                    load the categories and rules from{" "}
+                    <code>docs/bmg_rules.seed.json</code>.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {progress.map((category) => (
+                  <CategoryCard
+                    key={category.id}
+                    category={category}
+                    suggestionsByRule={suggestionsByRule}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        }
+        info={<DashboardInfo progress={progress} hasUnverified={hasUnverified} />}
+      />
     </main>
   );
 }
