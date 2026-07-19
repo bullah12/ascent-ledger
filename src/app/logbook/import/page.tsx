@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { ImportForm } from "./import-form";
 
 const sampleCsv = `date,route_name,discipline,grade,ascent_style,grade_system,area,pitches,length_m,partners,notes
@@ -7,7 +7,7 @@ const sampleCsv = `date,route_name,discipline,grade,ascent_style,grade_system,ar
 2023-05-20,Cenotaph Corner,rock,E1 5c,led,uk_trad,Dinas Cromlech,1,40,,`;
 
 export default async function ImportPage() {
-  await requireUser();
+  await requireOnboardedUser();
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 p-6">

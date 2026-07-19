@@ -77,9 +77,22 @@ model User {
   recommenderWeightsJson Json?    @map("recommender_weights_json")
   createdAt              DateTime @default(now()) @map("created_at")
 
-  climbs Climb[]
+  climbs     Climb[]
+  preference UserPreference?
 
   @@map("users")
+  @@schema("ascent_ledger")
+}
+
+model UserPreference {
+  userId                String       @id @map("user_id") @db.Uuid
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredDisciplines  Discipline[] @map("preferred_disciplines")
+  homeRegion            String?      @map("home_region")
+  provisionalGradesJson Json?        @map("provisional_grades_json")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  @@map("user_preferences")
   @@schema("ascent_ledger")
 }
 
@@ -164,6 +177,7 @@ model Route {
   externalUrl          String?      @map("external_url")
   externalId           String?      @map("external_id")
   lastSyncedAt         DateTime?    @map("last_synced_at")
+  starterDisciplines   Discipline[] @default([]) @map("starter_disciplines")
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
 

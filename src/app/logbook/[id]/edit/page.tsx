@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gradeSystemsByDiscipline } from "@/lib/grades";
 import { updateClimb } from "../../actions";
@@ -12,7 +12,7 @@ export default async function EditClimbPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
 
   const climb = await prisma.climb.findFirst({
     where: { id, userId: user.id },

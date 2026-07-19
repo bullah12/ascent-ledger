@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { disciplineLabels } from "@/lib/climbs/labels";
 import { gradeSystemLabels } from "@/lib/grades";
@@ -8,6 +8,7 @@ import { sourceAttribution } from "@/lib/importers/source-attribution";
 import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GradeHint } from "@/components/grade-hint";
 
 export default async function RouteDetailPage({
   params,
@@ -15,7 +16,7 @@ export default async function RouteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireUser();
+  await requireOnboardedUser();
   const route = await prisma.route.findUnique({
     where: { id },
     include: { area: { select: { name: true, region: true, country: true } } },
@@ -39,9 +40,14 @@ export default async function RouteDetailPage({
               .join(" · ") || "Area not recorded"}
           </p>
         </div>
-        <Button variant="outline" render={<Link href={`/routes/${route.id}/edit`} />}>
-          Edit
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" render={<Link href={`/routes/${route.id}/edit`} />}>
+            Edit
+          </Button>
+          <Button render={<Link href={`/logbook/new?routeId=${route.id}`} />}>
+            Log this route
+          </Button>
+        </div>
       </div>
 
       <dl className="grid gap-4 rounded-lg border p-5 sm:grid-cols-2">
@@ -50,6 +56,7 @@ export default async function RouteDetailPage({
           <dd className="font-medium">
             {route.gradeRaw ?? "Not graded"}
             {route.gradeSystem ? ` · ${gradeSystemLabels[route.gradeSystem]}` : ""}
+            {route.gradeSystem && <GradeHint system={route.gradeSystem} />}
           </dd>
         </div>
         <div>

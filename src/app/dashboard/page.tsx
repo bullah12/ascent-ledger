@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { CategoryProgress, RuleProgress } from "@/lib/bmg/engine";
 import { getUserProgressAndSuggestions } from "@/lib/bmg/user-progress";
@@ -16,6 +16,54 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { GradeHint } from "@/components/grade-hint";
+import { getStarterPacks, type StarterPack } from "@/lib/starters";
+import { disciplineLabels } from "@/lib/climbs/labels";
+
+function StarterPacks({ packs }: { packs: StarterPack[] }) {
+  if (packs.length === 0) {
+    return (
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Starter routes are not seeded yet</CardTitle>
+          <CardDescription>
+            Run <code>npm run db:seed:starters</code>, or start with any route in the{" "}
+            <Link href="/routes" className="underline">route database</Link>.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+  return (
+    <section className="mb-6 rounded-lg border p-4">
+      <h2 className="font-semibold">Starter packs</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Open-source routes grouped by your disciplines and region. Logging one creates the real history used by suggestions.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {packs.slice(0, 6).map((pack) => (
+          <div key={`${pack.discipline}:${pack.region}`}>
+            <p className="text-sm font-medium">
+              {disciplineLabels[pack.discipline]} · {pack.region}
+              {pack.homeRegionMatch && <Badge variant="secondary" className="ml-2">near home</Badge>}
+            </p>
+            <ul className="mt-1 space-y-1 text-sm">
+              {pack.routes.slice(0, 5).map((route) => (
+                <li key={route.id}>
+                  <Link href={`/routes/${route.id}`} className="underline">{route.name}</Link>
+                  <span className="text-muted-foreground">
+                    {route.gradeRaw ? ` · ${route.gradeRaw}` : ""}
+                    {route.lengthM ? ` · ${(route.lengthM / 1000).toFixed(0)} km` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function SuggestedRoutes({ suggestions }: { suggestions: RouteSuggestion[] }) {
   if (suggestions.length === 0) return null;
@@ -59,7 +107,10 @@ function RuleRow({
         <p className="text-sm font-medium">
           {rule.description}
           {rule.thresholdLabel ? (
-            <span className="text-muted-foreground"> · {rule.thresholdLabel}+</span>
+            <span className="text-muted-foreground">
+              {" · "}{rule.thresholdLabel}+
+              {rule.gradeSystem && <GradeHint system={rule.gradeSystem} />}
+            </span>
           ) : null}
         </p>
         {!rule.verified && (
@@ -139,12 +190,17 @@ function CategoryCard({
 }
 
 export default async function DashboardPage() {
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
 
-  const { hasRules, progress, hasUnverified, categorySuggestions } =
-    await getUserProgressAndSuggestions(prisma, user);
+  const climbCount = await prisma.climb.count({ where: { userId: user.id } });
+
+  const [{ hasRules, progress, hasUnverified, categorySuggestions }, starterPacks] =
+    await Promise.all([
+      getUserProgressAndSuggestions(prisma, user),
+      climbCount === 0 ? getStarterPacks(prisma, user.preference) : Promise.resolve([]),
+    ]);
   const suggestionsByRule = new Map(
-    categorySuggestions.flatMap((c) =>
+    (climbCount === 0 ? [] : categorySuggestions).flatMap((c) =>
       c.rules.map((r) => [r.ruleId, r.suggestions] as const)
     )
   );
@@ -165,6 +221,8 @@ export default async function DashboardPage() {
           </Button>
         </form>
       </div>
+
+      {climbCount === 0 && <StarterPacks packs={starterPacks} />}
 
       {!hasRules ? (
         <Card>

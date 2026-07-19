@@ -2,7 +2,8 @@
 
 Personal climbing logbook and BMG-standard progress tracker. See
 `docs/PLAN.md` for the full product spec and phased roadmap. The current app
-includes Phases 0–8, including trail drawing and GPX/KML track ingestion.
+includes Phases 0–10, including open trail ingestion, onboarding, and
+auditable starter packs.
 
 ## Stack
 
@@ -26,6 +27,8 @@ includes Phases 0–8, including trail drawing and GPX/KML track ingestion.
 ```bash
 npm install                 # also runs `prisma generate`
 npx prisma migrate deploy   # applies prisma/migrations to your database
+npm run db:seed             # BMG rules
+npm run db:seed:starters    # idempotent open-source starter routes
 npm run dev
 ```
 
@@ -50,6 +53,7 @@ climbs.
 | `npm run backfill:tracks -- --dry-run` | Parse existing `gpx_track_url` files without writing |
 | `npm run backfill:tracks` | Populate missing Climb `path_geojson` values |
 | `npm run sync:routes -- --max=200` | Run each configured route importer with a per-source cap |
+| `npm run db:seed:starters` | Upsert the verified starter-route pack and flags |
 | `npx prisma generate` | Regenerate the Prisma client (into `src/generated/prisma`, gitignored) |
 
 The weekly sync keeps OpenBeta and Camptocamp compatibility and adds bounded
@@ -66,6 +70,12 @@ contributors” for OSM-derived geometry. Source-specific terms remain
 authoritative: OSM data is ODbL, Natural England and Natural Resources Wales
 data is OGL with the displayed agency/Ordnance Survey notices, OpenBeta is CC0,
 and Camptocamp content is CC BY-SA 3.0.
+
+New users complete a three-step `/onboarding` flow. Its preference row is the
+completion signal; optional self-reported grades are provisional and are used
+only until a real climb exists in that grade system. Existing users are
+backfilled as complete by the Phase 10 migration. The starter seed is audited
+in `docs/starter_routes.seed.json`; it never creates `Climb` rows.
 
 ## Project layout
 

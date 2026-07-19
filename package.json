@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:starters": "tsx scripts/seed-starter-routes.ts",
     "sync:routes": "tsx scripts/sync-routes.ts",
     "backfill:tracks": "tsx scripts/backfill-track-geometry.ts",
     "postinstall": "prisma generate"

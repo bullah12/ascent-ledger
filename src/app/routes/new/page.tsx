@@ -1,9 +1,9 @@
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { createRoute } from "../actions";
 import { RouteForm } from "../route-form";
 
 export default async function NewRoutePage() {
-  await requireUser();
+  await requireOnboardedUser();
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 p-6">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { disciplineLabels } from "@/lib/climbs/labels";
 import { getUserProgressAndSuggestions } from "@/lib/bmg/user-progress";
@@ -17,7 +17,7 @@ import {
 } from "@/lib/importers/source-attribution";
 
 export default async function MapPage() {
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
 
   const [userClimbs, totalClimbs, { categorySuggestions }, routesWithPaths] = await Promise.all([
     prisma.climb.findMany({

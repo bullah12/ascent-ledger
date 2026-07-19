@@ -39,7 +39,14 @@ export default async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedPrefixes = ["/dashboard", "/logbook", "/routes", "/map", "/settings"];
+  const protectedPrefixes = [
+    "/dashboard",
+    "/logbook",
+    "/routes",
+    "/map",
+    "/settings",
+    "/onboarding",
+  ];
   if (
     !user &&
     protectedPrefixes.some((prefix) =>

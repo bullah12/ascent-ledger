@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TrackEditor } from "@/components/track-editor";
 import type { LineString } from "geojson";
 import type { TrackPathSource } from "@/lib/tracks";
+import { GradeHint } from "@/components/grade-hint";
 
 export type RouteFormValues = {
   name: string;
@@ -117,7 +118,7 @@ export function RouteForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label htmlFor="gradeSystem">Grade system</Label>
+          <Label htmlFor="gradeSystem">Grade system <GradeHint system={gradeSystem} /></Label>
           <NativeSelect
             id="gradeSystem"
             name="gradeSystem"

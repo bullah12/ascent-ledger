@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { parseWeights } from "@/lib/recommender";
 import { saveWeights } from "./actions";
 import { SiteNav } from "@/components/site-nav";
@@ -30,7 +30,7 @@ const FIELDS = [
 ] as const;
 
 export default async function SettingsPage() {
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
   const weights = parseWeights(user.recommenderWeightsJson);
 
   return (

@@ -1,0 +1,35 @@
+{
+  "verified_at": "2026-07-19",
+  "sources": {
+    "camptocamp": {
+      "licence": "CC BY-SA 3.0",
+      "url": "https://api.camptocamp.org"
+    },
+    "national_trails_england": {
+      "licence": "Open Government Licence v3.0",
+      "url": "https://www.data.gov.uk/dataset/ac8c851c-99a0-4488-8973-6c8863529c45/national-trails-england3"
+    }
+  },
+  "routes": [
+    { "source": "national_trails_england", "external_id": "1", "name": "Pennine Way", "discipline": "hiking", "grade_system": null, "grade": null, "lat": 53.3704600431356, "lng": -1.81681175592665, "length_m": 435000, "quality": null, "area": "National Trails — England", "region": "England", "country": "United Kingdom" },
+    { "source": "national_trails_england", "external_id": "2", "name": "Offa's Dyke Path", "discipline": "hiking", "grade_system": null, "grade": null, "lat": 51.6325461883951, "lng": -2.6484311666258, "length_m": 292000, "quality": null, "area": "National Trails — England", "region": "England", "country": "United Kingdom" },
+    { "source": "national_trails_england", "external_id": "3", "name": "South Downs Way", "discipline": "hiking", "grade_system": null, "grade": null, "lat": 50.9955839736578, "lng": -1.14310285852966, "length_m": 183000, "quality": null, "area": "National Trails — England", "region": "England", "country": "United Kingdom" },
+    { "source": "national_trails_england", "external_id": "4", "name": "The Ridgeway", "discipline": "hiking", "grade_system": null, "grade": null, "lat": 51.8421372378442, "lng": -0.608369023483769, "length_m": 139000, "quality": null, "area": "National Trails — England", "region": "England", "country": "United Kingdom" },
+
+    { "source": "camptocamp", "external_id": "1928107", "name": "Vas-y Guigui", "discipline": "rock", "grade_system": "french_sport", "grade": "4c", "lat": 46.2794, "lng": 7.3961, "length_m": null, "quality": 2, "area": "Bernese Alps", "region": "Alps", "country": "Switzerland" },
+    { "source": "camptocamp", "external_id": "1928283", "name": "À visage découvert", "discipline": "rock", "grade_system": "french_sport", "grade": "5c+", "lat": 44.88132, "lng": 6.44545, "length_m": null, "quality": 3, "area": "Écrins", "region": "Alps", "country": "France" },
+    { "source": "camptocamp", "external_id": "1927818", "name": "Les amélanchiers", "discipline": "rock", "grade_system": "french_sport", "grade": "6a", "lat": 44.713871, "lng": 6.576372, "length_m": null, "quality": 4, "area": "Écrins", "region": "Alps", "country": "France" },
+
+    { "source": "camptocamp", "external_id": "1928108", "name": "Traversées arête SW - arête ESE", "discipline": "alpine", "grade_system": "alpine_overall", "grade": "PD", "lat": 45.9575901087363, "lng": 7.04685056581664, "length_m": null, "quality": 3, "area": "Mont-Blanc", "region": "Alps", "country": "Switzerland" },
+    { "source": "camptocamp", "external_id": "1928323", "name": "Arête W", "discipline": "alpine", "grade_system": "alpine_overall", "grade": "PD+", "lat": 44.2675042991768, "lng": 6.95380053513301, "length_m": null, "quality": 4, "area": "Mercantour - Argentera", "region": "Alps", "country": "France" },
+    { "source": "camptocamp", "external_id": "1927969", "name": "Par l'arête NE", "discipline": "alpine", "grade_system": "alpine_overall", "grade": "PD", "lat": 46.303895, "lng": 7.1891, "length_m": null, "quality": 4, "area": "Vaudois Alps", "region": "Alps", "country": "Switzerland" },
+
+    { "source": "camptocamp", "external_id": "1891046", "name": "Cascade à JaBo", "discipline": "winter", "grade_system": "wi_ice", "grade": "4+", "lat": 45.9645553878955, "lng": 7.31092245398751, "length_m": null, "quality": 4, "area": "Valais W - Pennine Alps W", "region": "Alps", "country": "Switzerland" },
+    { "source": "camptocamp", "external_id": "1887565", "name": "Cascade de la Gurre du Bois", "discipline": "winter", "grade_system": "wi_ice", "grade": "4", "lat": 45.464888565235, "lng": 6.74374622309503, "length_m": null, "quality": 2, "area": "Vanoise", "region": "Alps", "country": "France" },
+    { "source": "camptocamp", "external_id": "1887548", "name": "Cascade du cul du nant", "discipline": "winter", "grade_system": "wi_ice", "grade": "4+", "lat": 45.477456628196, "lng": 6.79378088118867, "length_m": null, "quality": 2, "area": "Vanoise", "region": "Alps", "country": "France" },
+
+    { "source": "camptocamp", "external_id": "1920411", "name": "Descent to Münster via Blaggibärg and Minstigertal", "discipline": "ski_touring", "grade_system": "ski_touring_scale", "grade": "AD-", "lat": 46.516099, "lng": 8.188871, "length_m": null, "quality": 4, "area": "Bernese Alps", "region": "Alps", "country": "Switzerland" },
+    { "source": "camptocamp", "external_id": "1909649", "name": "Raids de l'Oberland vers. B: de Münster VS à Rosenlaui Gletscherschlucht", "discipline": "ski_touring", "grade_system": "ski_touring_scale", "grade": "AD+", "lat": 46.5439133428028, "lng": 8.19024348866399, "length_m": null, "quality": 4, "area": "Bernese Alps", "region": "Alps", "country": "Switzerland" },
+    { "source": "camptocamp", "external_id": "1907217", "name": "Anello F.la Radont m 2786>F.la Vallorgia m 2962>F.la 2981 a Est Scalettahorn>quota 2380 Chilbiritze per il Gletschtalli>F.la Grialetsch", "discipline": "ski_touring", "grade_system": "ski_touring_scale", "grade": "AD", "lat": 46.693753, "lng": 9.954852, "length_m": null, "quality": 4, "area": "Central Graubünden Alps", "region": "Alps", "country": "Switzerland" }
+  ]
+}

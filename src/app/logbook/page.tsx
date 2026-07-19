@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ClimbTable, type ClimbRow } from "./climb-table";
 import { LinkSuggestions, type SuggestionRow } from "./link-suggestions";
@@ -7,7 +7,7 @@ import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 
 export default async function LogbookPage() {
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
 
   const [climbs, pendingSuggestions] = await Promise.all([
     prisma.climb.findMany({
@@ -80,11 +80,14 @@ export default async function LogbookPage() {
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center">
           <p className="font-medium">Your logbook is empty</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Log your first climb to start building your record toward the BMG
-            prerequisites.
+            Choose a verified open-source starter pack on the dashboard, import
+            an existing CSV, or log a route you have already completed.
           </p>
           <Button render={<Link href="/logbook/new" />}>
             Log your first climb
+          </Button>
+          <Button variant="outline" render={<Link href="/dashboard" />}>
+            Browse starter packs
           </Button>
         </div>
       ) : (

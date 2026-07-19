@@ -48,6 +48,7 @@ export type RuleProgress = {
   percent: number;
   /** Human threshold like "TD (alpine overall)", null for count-only rules. */
   thresholdLabel: string | null;
+  gradeSystem: GradeSystem | null;
   verified: boolean;
   /** Set-level shortfalls and unenforceable-constraint caveats. */
   notes: string[];
@@ -211,6 +212,7 @@ function evaluateRule(rule: EngineRule, climbs: EngineClimb[]): RuleProgress {
     met,
     percent: Math.min(100, Math.round((actualCount / rule.minCount) * 100)),
     thresholdLabel,
+    gradeSystem: rule.gradeSystem,
     verified: rule.verified,
     notes,
   };

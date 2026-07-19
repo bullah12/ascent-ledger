@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   ascentStyleLabels,
@@ -10,6 +10,7 @@ import { gradeSystemLabels } from "@/lib/grades";
 import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GradeHint } from "@/components/grade-hint";
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -28,7 +29,7 @@ export default async function ClimbDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await requireUser();
+  const user = await requireOnboardedUser();
 
   const climb = await prisma.climb.findFirst({
     where: { id, userId: user.id },
@@ -78,6 +79,7 @@ export default async function ClimbDetailPage({
                   ({gradeSystemLabels[climb.gradeSystem]})
                 </span>
               ) : null}
+              {climb.gradeSystem && <GradeHint system={climb.gradeSystem} />}
             </>
           }
         />

@@ -5,10 +5,14 @@ import ladders from "./grade_ladders.json";
 // cross-system conversion. A score answers "is this at/above threshold X"
 // within its own system only.
 
-type LadderEntry = { score: number; label: string; aliases: string[] };
-type Ladder = { label: string; entries: LadderEntry[] };
+export type LadderEntry = { score: number; label: string; aliases: string[] };
+export type GradeLadder = { label: string; _note?: string; entries: LadderEntry[] };
 
-const gradeLadders = ladders as unknown as Record<GradeSystem, Ladder>;
+const gradeLadders = ladders as unknown as Record<GradeSystem, GradeLadder>;
+
+export function gradeLadder(system: GradeSystem): GradeLadder {
+  return gradeLadders[system];
+}
 
 export const gradeSystemLabels: Record<GradeSystem, string> = {
   uk_trad: "UK trad",

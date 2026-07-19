@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { disciplineLabels } from "@/lib/climbs/labels";
 import { SiteNav } from "@/components/site-nav";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function RoutesPage() {
-  await requireUser();
+  await requireOnboardedUser();
 
   const routes = await prisma.route.findMany({
     include: { area: { select: { name: true } } },
@@ -42,9 +42,8 @@ export default async function RoutesPage() {
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center">
           <p className="font-medium">No routes yet</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Add routes manually to link them from your logbook and see them on
-            the map. Importers for open route databases arrive in a later
-            phase.
+            Seed the auditable starter packs, run the open-data importers, or
+            add a route manually to link from your logbook and map.
           </p>
           <Button render={<Link href="/routes/new" />}>
             Add your first route

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gradeSystemsByDiscipline } from "@/lib/grades";
 import { lineStringOrNull } from "@/lib/tracks";
@@ -12,7 +12,7 @@ export default async function EditRoutePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireUser();
+  await requireOnboardedUser();
 
   const route = await prisma.route.findUnique({
     where: { id },
