@@ -23,6 +23,10 @@ preference-driven “For you” engine.
    - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — from Project Settings → API
    - `NATURESCOT_TRAILS_GEOJSON_URL` — optional HTTPS URL for an
      official/licensed Scotland's Great Trails GeoJSON distribution
+   - `OPENROUTESERVICE_API_KEY` — enables snap-to-trail drawing with the
+     openrouteservice hiking profile
+   - `OPENROUTESERVICE_BASE_URL` — optional override for a proxy or
+     self-hosted openrouteservice instance
 3. Install, migrate, and run:
 
 ```bash
@@ -38,6 +42,13 @@ For raw Climb track archives, create a public Supabase Storage bucket named
 `gpx-tracks` with authenticated INSERT/DELETE policies restricted to paths
 starting with the user's auth UUID. Both GPX and KML files use this existing
 bucket name.
+
+The route editor's **Follow trails** mode snaps ordinary clicks to mapped
+trails within 75 metres and routes between them. Shift-click places an exact
+off-trail waypoint; dragging a snapped waypoint also converts it to an
+off-trail waypoint. Routing failures fall back to a straight section without
+discarding the user's point. The openrouteservice key is read only by the
+authenticated `/api/trail-route` handler and is never included in browser code.
 
 Open <http://localhost:3000>. Sign up, confirm your email, and you land on
 the dashboard — from there, open the logbook at `/logbook` to start logging
@@ -118,7 +129,7 @@ separately from the BMG gap recommender, whose dashboard behavior is unchanged.
 
 1. Import the GitHub repo at <https://vercel.com/new> (framework preset:
    Next.js, defaults are fine — `npm install` triggers `prisma generate`).
-2. Add the four env vars from `.env.example` in Project → Settings →
+2. Add the required env vars from `.env.example` in Project → Settings →
    Environment Variables.
 3. In Supabase: Authentication → URL Configuration, set the **Site URL** to
    your Vercel URL and add `https://<your-app>.vercel.app/auth/callback` to
