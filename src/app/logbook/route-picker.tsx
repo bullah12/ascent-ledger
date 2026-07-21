@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { disciplineLabels } from "@/lib/climbs/labels";
 import type { Discipline } from "@/generated/prisma/enums";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export type LinkedRoute = {
   id: string;
@@ -84,33 +83,38 @@ export function RoutePicker({
 
   return (
     <div className="grid gap-2">
-      <Label htmlFor="route-search">
-        Link to a route{" "}
-        <span className="font-normal text-muted-foreground">(optional)</span>
-      </Label>
       <input type="hidden" name="routeId" value={selected?.id ?? ""} />
 
       {selected ? (
-        <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm">
-          <span className="truncate">{routeLabel(selected)}</span>
+        <div className="flex items-center gap-4 rounded-xl border bg-background p-3 text-sm">
+          <span aria-hidden className="topographic-placeholder size-12 shrink-0 rounded-lg" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-base font-bold">{selected.name}</span>
+            <span className="block truncate font-mono text-[11px] text-muted-foreground">
+              {[selected.areaName, selected.gradeRaw, disciplineLabels[selected.discipline]].filter(Boolean).join(" · ")}
+            </span>
+          </span>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Unlink route"
+            aria-label="Change linked route"
             onClick={() => setSelected(null)}
           >
             <X className="size-4" />
+            <span className="sr-only">Change</span>
           </Button>
         </div>
       ) : (
         <div className="relative">
+          <Search aria-hidden className="absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="route-search"
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Search the route database by name…"
             autoComplete="off"
+            className="h-11 pl-9"
           />
           {query.trim().length >= 2 && (
             <div className="absolute top-full z-10 mt-1 w-full rounded-md border bg-popover shadow-md">

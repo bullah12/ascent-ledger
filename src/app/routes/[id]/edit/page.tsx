@@ -5,6 +5,7 @@ import { gradeSystemsByDiscipline } from "@/lib/grades";
 import { lineStringOrNull } from "@/lib/tracks";
 import { updateRoute } from "../../actions";
 import { RouteForm } from "../../route-form";
+import { SiteNav } from "@/components/site-nav";
 
 export default async function EditRoutePage({
   params,
@@ -21,8 +22,9 @@ export default async function EditRoutePage({
   if (!route) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 p-4 sm:p-6">
-      <h1 className="mb-1 text-2xl font-bold tracking-tight">Edit route</h1>
+    <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-10 sm:px-6">
+      <SiteNav current="/routes" />
+      <h1 className="page-title">Edit route</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         A stored line uses its first point as the route&apos;s representative map location.
       </p>
@@ -40,6 +42,9 @@ export default async function EditRoutePage({
           area: route.area?.name ?? "",
           lat: route.lat,
           lng: route.lng,
+          lengthM: route.lengthM,
+          ascentM: route.ascentM,
+          estimatedDurationMins: route.estimatedDurationMins,
           description: route.description ?? "",
         }}
       />

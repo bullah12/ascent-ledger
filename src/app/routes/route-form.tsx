@@ -24,6 +24,9 @@ export type RouteFormValues = {
   area: string;
   lat: number | null;
   lng: number | null;
+  lengthM: number | null;
+  ascentM: number | null;
+  estimatedDurationMins: number | null;
   description: string;
 };
 
@@ -113,6 +116,24 @@ export function RouteForm({
             placeholder="e.g. Ben Nevis"
           />
           <FieldError message={errors.area} />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-2">
+          <Label htmlFor="lengthM">Distance · metres</Label>
+          <Input id="lengthM" name="lengthM" type="number" min={0} defaultValue={defaultValues?.lengthM ?? undefined} placeholder="12000" />
+          <FieldError message={errors.lengthM} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="ascentM">Ascent · metres</Label>
+          <Input id="ascentM" name="ascentM" type="number" min={0} defaultValue={defaultValues?.ascentM ?? undefined} placeholder="1000" />
+          <FieldError message={errors.ascentM} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="estimatedDurationMins">Duration · minutes</Label>
+          <Input id="estimatedDurationMins" name="estimatedDurationMins" type="number" min={1} defaultValue={defaultValues?.estimatedDurationMins ?? undefined} placeholder="420" />
+          <FieldError message={errors.estimatedDurationMins} />
         </div>
       </div>
 

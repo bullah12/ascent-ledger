@@ -1,363 +1,151 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
-import type { GradeSystem } from "@/generated/prisma/enums";
+import { Plus, Star } from "lucide-react";
 import { requireOnboardedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { CategoryProgress, RuleProgress } from "@/lib/bmg/engine";
 import { getUserProgressAndSuggestions } from "@/lib/bmg/user-progress";
-import type { RouteSuggestion } from "@/lib/recommender";
-import { signOut } from "./actions";
+import { getForYouSuggestions } from "@/lib/suggestions";
+import { getStarterPacks } from "@/lib/starters";
 import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { getStarterPacks, type StarterPack } from "@/lib/starters";
-import { disciplineLabels } from "@/lib/climbs/labels";
-import { gradeLadder, gradeSystemLabels } from "@/lib/grades";
-import { DashboardTabs } from "./dashboard-tabs";
+import { cn } from "@/lib/utils";
+import { signOut } from "./actions";
 
-function StarterPacks({ packs }: { packs: StarterPack[] }) {
-  if (packs.length === 0) {
-    return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Starter routes are not seeded yet</CardTitle>
-          <CardDescription>
-            Run <code>npm run db:seed:starters</code>, or start with any route in the{" "}
-            <Link href="/routes" className="underline">route database</Link>.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-  return (
-    <section className="mb-6 rounded-lg border p-4">
-      <h2 className="font-semibold">Starter packs</h2>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Open-source routes grouped by your disciplines and region. Logging one creates the real history used by suggestions.
-      </p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {packs.slice(0, 6).map((pack) => (
-          <div key={`${pack.discipline}:${pack.region}`}>
-            <p className="text-sm font-medium">
-              {disciplineLabels[pack.discipline]} · {pack.region}
-              {pack.homeRegionMatch && <Badge variant="secondary" className="ml-2">near home</Badge>}
-            </p>
-            <ul className="mt-1 space-y-1 text-sm">
-              {pack.routes.slice(0, 5).map((route) => (
-                <li key={route.id}>
-                  <Link href={`/routes/${route.id}`} className="underline">{route.name}</Link>
-                  <span className="text-muted-foreground">
-                    {route.gradeRaw ? ` · ${route.gradeRaw}` : ""}
-                    {route.lengthM ? ` · ${(route.lengthM / 1000).toFixed(0)} km` : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+type RecommendationMode = "familiar" | "balanced" | "explore";
+
+const modeLevel: Record<RecommendationMode, number> = {
+  familiar: 0.12,
+  balanced: 0.35,
+  explore: 0.78,
+};
+
+function formatDistance(metres: number) {
+  if (!metres) return "0 km";
+  return `${Math.round(metres / 1000).toLocaleString()} km`;
 }
 
-function SuggestedRoutes({ suggestions }: { suggestions: RouteSuggestion[] }) {
-  if (suggestions.length === 0) return null;
-  return (
-    <div className="mt-3 rounded-md border bg-muted/30 p-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Suggested routes
-      </p>
-      <ul className="space-y-1.5">
-        {suggestions.map((s) => (
-          <li key={s.routeId} className="text-sm">
-            {s.externalUrl ? (
-              <a href={s.externalUrl} target="_blank" rel="noreferrer" className="font-medium underline">
-                {s.name}
-              </a>
-            ) : (
-              <span className="font-medium">{s.name}</span>
-            )}
-            <span className="text-muted-foreground">
-              {s.gradeRaw ? ` · ${s.gradeRaw}` : ""}
-              {s.areaName ? ` · ${s.areaName}` : ""}
-            </span>
-            <span className="block text-xs text-muted-foreground">{s.why}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+function recommendationTag(why: string) {
+  if (/novel|new/i.test(why)) return { label: "New terrain", className: "bg-secondary text-secondary-foreground" };
+  if (/grade|comfort/i.test(why)) return { label: "One grade up", className: "bg-sky-100 text-sky-800" };
+  if (/familiar|recent/i.test(why)) return { label: "Like your logs", className: "bg-accent text-accent-foreground" };
+  return { label: "Good fit", className: "bg-clay-muted text-clay" };
 }
 
-function RuleRow({
-  rule,
-  suggestions,
-}: {
-  rule: RuleProgress;
-  suggestions: RouteSuggestion[];
-}) {
-  return (
-    <div className="border-t px-6 py-4">
-      <div className="mb-2 flex items-start justify-between gap-3">
-        <p className="text-sm font-medium">
-          {rule.description}
-          {rule.thresholdLabel ? (
-            <span className="text-muted-foreground">
-              {" · "}{rule.thresholdLabel}+
-            </span>
-          ) : null}
-        </p>
-        {!rule.verified && (
-          <Badge variant="outline" className="shrink-0 text-amber-600">
-            unverified
-          </Badge>
-        )}
-      </div>
-      <div className="flex items-center gap-3">
-        <Progress value={rule.percent} className="flex-1" />
-        <span className="w-16 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
-          {rule.actualCount}/{rule.minCount}
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {rule.met
-          ? "Done ✓"
-          : rule.stillNeeded > 0
-            ? `${rule.stillNeeded} more needed`
-            : "Count met — see notes"}
-        {rule.notes.length > 0 && <> · {rule.notes.join(" · ")}</>}
-      </p>
-      <SuggestedRoutes suggestions={suggestions} />
-    </div>
-  );
-}
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ mode?: string }> }) {
+  const user = await requireOnboardedUser();
+  const requestedMode = (await searchParams).mode;
+  const mode: RecommendationMode = requestedMode === "familiar" || requestedMode === "explore" ? requestedMode : "balanced";
 
-function InfoSection({ title, children }: { title: string; children: ReactNode }) {
+  const [climbs, progressResult, recommendations] = await Promise.all([
+    prisma.climb.findMany({
+      where: { userId: user.id },
+      select: { id: true, date: true, lengthM: true, ascentM: true, rating: true, gradeRaw: true, freeTextRouteName: true, area: { select: { name: true } }, route: { select: { id: true, name: true, area: { select: { name: true } } } } },
+      orderBy: { date: "desc" },
+    }),
+    getUserProgressAndSuggestions(prisma, user),
+    getForYouSuggestions(prisma, user.id, new Date(), 5, modeLevel[mode]),
+  ]);
+
+  const starterPacks = climbs.length === 0 ? await getStarterPacks(prisma, user.preference) : [];
+  const overall = progressResult.progress.length
+    ? Math.round(progressResult.progress.reduce((sum, category) => sum + category.percent, 0) / progressResult.progress.length)
+    : 0;
+  const totalDistance = climbs.reduce((sum, climb) => sum + (climb.lengthM ?? 0), 0);
+  const totalAscent = climbs.reduce((sum, climb) => sum + (climb.ascentM ?? 0), 0);
+  const daysOut = new Set(climbs.map((climb) => climb.date.toISOString().slice(0, 10))).size;
+  const displayName = user.displayName?.trim() || user.email.split("@")[0];
+  const firstName = displayName.split(/\s+/)[0];
+  const today = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "2-digit", month: "short" }).format(new Date()).toUpperCase();
+
   return (
-    <Card className="gap-0 overflow-hidden py-0">
-      <details className="group">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
-          <h2 className="font-semibold">{title}</h2>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="border-t px-5 py-4 text-sm text-muted-foreground">
-          {children}
+    <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 pb-10 sm:px-6 lg:px-8">
+      <SiteNav current="/dashboard" />
+
+      <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="instrument-label mb-2 text-primary">{today} · Conditions vary</p>
+          <h1 className="page-title">Welcome back, {firstName}</h1>
+          <p className="mt-2 text-base text-muted-foreground">You&apos;re {overall}% of the way through your tracked BMG prerequisites.</p>
         </div>
-      </details>
-    </Card>
-  );
-}
+        <div className="flex gap-2">
+          <form action={signOut}><Button type="submit" variant="ghost">Sign out</Button></form>
+          <Button size="lg" render={<Link href="/logbook/new" />}><Plus /> Log a climb</Button>
+        </div>
+      </header>
 
-function DashboardInfo({
-  progress,
-  hasUnverified,
-}: {
-  progress: CategoryProgress[];
-  hasUnverified: boolean;
-}) {
-  const gradeSystems = Array.from(
-    new Set(
-      progress
-        .flatMap((category) => category.rules.map((rule) => rule.gradeSystem))
-        .filter((system): system is GradeSystem => system !== null),
-    ),
-  );
+      <dl className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          ["Climbs logged", climbs.length.toLocaleString()],
+          ["Distance", formatDistance(totalDistance)],
+          ["Total ascent", `${totalAscent.toLocaleString()} m`],
+          ["Days out", daysOut.toLocaleString()],
+        ].map(([label, value]) => (
+          <Card key={label} className="gap-2 p-5 py-5 sm:p-6">
+            <dt className="instrument-label">{label}</dt>
+            <dd className="text-[30px] leading-none font-extrabold tracking-[-0.02em]">{value}</dd>
+          </Card>
+        ))}
+      </dl>
 
-  return (
-    <div className="space-y-3">
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold">About your BMG progress</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Expand only the section you need. This guidance is kept here so it
-          does not cover progress details while you review a category.
-        </p>
-      </div>
+      {starterPacks.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader><CardTitle className="text-[17px] font-bold">Start with a route pack</CardTitle><p className="text-sm text-muted-foreground">Your recommendations become personal after the first real log.</p></CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {starterPacks.slice(0, 6).map((pack) => <div key={`${pack.discipline}:${pack.region}`} className="rounded-lg border p-3"><p className="font-semibold">{pack.region}</p><ul className="mt-2 space-y-1 text-sm">{pack.routes.slice(0, 3).map((route) => <li key={route.id}><Link href={`/routes/${route.id}`} className="hover:text-primary hover:underline">{route.name}</Link></li>)}</ul></div>)}
+          </CardContent>
+        </Card>
+      )}
 
-      <InfoSection title="How progress is calculated">
-        <p>
-          Each category compares eligible climbs in your logbook with the
-          configured BMG prerequisite rules. A climb only counts toward a
-          graded rule when its grade system and normalised grade match that
-          rule. Percentages show completed rule requirements, not a general
-          assessment of readiness.
-        </p>
-      </InfoSection>
-
-      <InfoSection title="Grade systems used on this dashboard">
-        {gradeSystems.length === 0 ? (
-          <p>No graded BMG rules are currently loaded.</p>
-        ) : (
-          <div className="space-y-3">
-            {gradeSystems.map((system) => {
-              const ladder = gradeLadder(system);
+      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+        <Card className="gap-0 py-0">
+          <CardHeader className="border-b py-5 sm:grid-cols-[1fr_auto]">
+            <div>
+              <CardTitle className="text-[17px] font-bold">Recommended for you</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">Real routes ranked from your history, preferences, and current level.</p>
+            </div>
+            <div className="mt-3 flex w-fit overflow-hidden rounded-lg border sm:mt-0">
+              {(["familiar", "balanced", "explore"] as const).map((value) => <Link key={value} href={`/dashboard?mode=${value}`} aria-current={mode === value ? "page" : undefined} className={cn("px-3 py-2 font-mono text-[10px] uppercase tracking-[0.04em] transition-colors", mode === value ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground")}>{value}</Link>)}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 py-4">
+            {recommendations.map((suggestion) => {
+              const tag = recommendationTag(suggestion.why);
               return (
-                <details key={system} className="rounded-md border bg-background p-3">
-                  <summary className="cursor-pointer font-medium text-foreground">
-                    {gradeSystemLabels[system]}
-                  </summary>
-                  <p className="mt-2 text-xs">
-                    {ladder._note ?? "Grades are ordinal within this system only."}
-                  </p>
-                  {ladder.entries.length > 0 && (
-                    <p className="mt-2 text-xs text-foreground">
-                      {ladder.entries.map((entry) => entry.label).join(" · ")}
-                    </p>
-                  )}
-                </details>
+                <Link key={suggestion.routeId} href={`/routes/${suggestion.routeId}`} className="group flex items-center gap-4 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:bg-muted/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <span aria-hidden className="topographic-placeholder size-14 shrink-0 rounded-lg" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2"><strong className="truncate text-[15px]">{suggestion.name}</strong><Badge className={tag.className}>{tag.label}</Badge></span>
+                    <span className="mt-1 block truncate font-mono text-[10px] text-muted-foreground">{[suggestion.areaName, suggestion.region, suggestion.gradeRaw].filter(Boolean).join(" · ") || "Route details available"}</span>
+                    <span className="mt-1 block truncate text-xs text-muted-foreground">{suggestion.why}</span>
+                  </span>
+                  <span className="shrink-0 text-center font-mono text-primary"><span className="block text-xl font-semibold">{Math.round(suggestion.score * 100)}</span><span className="block text-[9px] text-muted-foreground">MATCH</span></span>
+                </Link>
               );
             })}
-            <Link href="/help/grades" className="inline-block underline">
-              Open the complete grade guide
-            </Link>
-          </div>
-        )}
-      </InfoSection>
+            {!recommendations.length && <div className="rounded-xl border border-dashed p-8 text-center"><p className="font-semibold">No matching routes yet</p><p className="mt-1 text-sm text-muted-foreground">Tune your preferences or add a real climb to widen the recommendation signal.</p><Button className="mt-4" variant="outline" render={<Link href="/settings" />}>Tune preferences</Button></div>}
+          </CardContent>
+        </Card>
 
-      <InfoSection title="Suggested routes">
-        <p>
-          Suggestions shown beneath incomplete rules are chosen by the BMG gap
-          engine to help address that specific requirement. They are separate
-          from the preference-based recommendations on the{" "}
-          <Link href="/for-you" className="underline">For you</Link> page.
-        </p>
-      </InfoSection>
+        <div className="grid content-start gap-6">
+          <Card>
+            <CardHeader className="grid-cols-[1fr_auto]"><CardTitle className="text-[17px] font-bold">BMG progression</CardTitle><Link href="/progress" className="font-mono text-[10px] uppercase tracking-[0.05em] text-primary hover:underline">View all →</Link></CardHeader>
+            <CardContent className="space-y-4">
+              {progressResult.progress.slice(0, 4).map((category) => <div key={category.id}><div className="mb-1.5 flex justify-between gap-3"><span className="font-semibold">{category.label}</span><span className="font-mono text-[11px] text-muted-foreground">{category.percent}%</span></div><Progress value={category.percent} /></div>)}
+              {!progressResult.hasRules && <p className="text-sm text-muted-foreground">No BMG rules are loaded yet.</p>}
+            </CardContent>
+          </Card>
 
-      <InfoSection title="Rule confidence and data quality">
-        <p>
-          {hasUnverified
-            ? "Rules marked unverified use draft numbers from the source seed and should be checked against the current BMG prerequisites. "
-            : "No currently loaded rules are marked unverified. "}
-          Region and terrain constraints are enforced only when the relevant
-          area data is present. Climbs with unrecognised grades remain visible
-          in the logbook but do not count toward graded rules.
-        </p>
-      </InfoSection>
-    </div>
-  );
-}
-
-function CategoryCard({
-  category,
-  suggestionsByRule,
-}: {
-  category: CategoryProgress;
-  suggestionsByRule: Map<string, RouteSuggestion[]>;
-}) {
-  return (
-    <Card className="gap-0 overflow-hidden py-0">
-      <details className="group">
-        <summary className="cursor-pointer list-none px-6 py-5 [&::-webkit-details-marker]:hidden">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">{category.label}</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {category.metRules}/{category.totalRules} rules met
-              </span>
-              <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Progress value={category.percent} className="h-3 flex-1" />
-            <span className="w-12 shrink-0 text-right text-sm font-medium tabular-nums">
-              {category.percent}%
-            </span>
-          </div>
-          {category.ungradedCount > 0 && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {category.ungradedCount} climb
-              {category.ungradedCount === 1 ? "" : "s"} with an unrecognised
-              grade — not counted toward graded rules.{" "}
-              <Link href="/logbook" className="underline">
-                Fix in logbook
-              </Link>
-            </p>
-          )}
-        </summary>
-        <div className="pb-2">
-          {category.rules.map((rule) => (
-            <RuleRow
-              key={rule.id}
-              rule={rule}
-              suggestions={suggestionsByRule.get(rule.id) ?? []}
-            />
-          ))}
+          <Card>
+            <CardHeader><CardTitle className="text-[17px] font-bold">Recent climbs</CardTitle></CardHeader>
+            <CardContent className="divide-y">
+              {climbs.slice(0, 5).map((climb) => <Link key={climb.id} href={`/logbook/${climb.id}`} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0 hover:text-primary"><span className="min-w-0"><strong className="block truncate">{climb.route?.name ?? climb.freeTextRouteName}</strong><span className="block truncate font-mono text-[10px] text-muted-foreground">{[climb.route?.area?.name ?? climb.area?.name, climb.gradeRaw].filter(Boolean).join(" · ")}</span></span><span className="shrink-0 text-right"><span className="flex justify-end text-amber-600">{climb.rating ? Array.from({ length: climb.rating }, (_, index) => <Star key={index} className="size-3 fill-current" />) : <span className="text-xs text-muted-foreground">Unrated</span>}</span><span className="font-mono text-[10px] text-muted-foreground">{climb.date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span></span></Link>)}
+              {!climbs.length && <p className="text-sm text-muted-foreground">Your recent climbs will appear here after your first log.</p>}
+            </CardContent>
+          </Card>
         </div>
-      </details>
-    </Card>
-  );
-}
-
-export default async function DashboardPage() {
-  const user = await requireOnboardedUser();
-
-  const climbCount = await prisma.climb.count({ where: { userId: user.id } });
-
-  const [{ hasRules, progress, hasUnverified, categorySuggestions }, starterPacks] =
-    await Promise.all([
-      getUserProgressAndSuggestions(prisma, user),
-      climbCount === 0 ? getStarterPacks(prisma, user.preference) : Promise.resolve([]),
-    ]);
-  const suggestionsByRule = new Map(
-    (climbCount === 0 ? [] : categorySuggestions).flatMap((c) =>
-      c.rules.map((r) => [r.ruleId, r.suggestions] as const)
-    )
-  );
-
-  return (
-    <main className="mx-auto w-full max-w-4xl flex-1 p-4 sm:p-6">
-      <SiteNav current="/dashboard" />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">BMG progress</h1>
-          <p className="text-sm text-muted-foreground">
-            Your logbook scored against the BMG aspirant prerequisites.
-          </p>
-        </div>
-        <form action={signOut}>
-          <Button type="submit" variant="ghost">
-            Sign out
-          </Button>
-        </form>
       </div>
-
-      <DashboardTabs
-        progress={
-          <>
-            {climbCount === 0 && <StarterPacks packs={starterPacks} />}
-            {!hasRules ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>No BMG rules loaded</CardTitle>
-                  <CardDescription>
-                    The rules table is empty. Run <code>npm run db:seed</code> to
-                    load the categories and rules from{" "}
-                    <code>docs/bmg_rules.seed.json</code>.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {progress.map((category) => (
-                  <CategoryCard
-                    key={category.id}
-                    category={category}
-                    suggestionsByRule={suggestionsByRule}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        }
-        info={<DashboardInfo progress={progress} hasUnverified={hasUnverified} />}
-      />
     </main>
   );
 }
