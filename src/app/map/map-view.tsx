@@ -49,10 +49,12 @@ const CLIMBS_SOURCE = "climbs";
 const SUGGESTED_SOURCE = "suggested";
 const FOR_YOU_SOURCE = "for-you";
 const PATHS_SOURCE = "stored-paths";
-const SUGGESTED_COLOR = "#d97706"; // amber — distinct from the teal climbs
-const FOR_YOU_COLOR = "#c026d3"; // fuchsia — distinct from BMG amber
-const CLIMB_PATH_COLOR = "#7c3aed"; // violet — personal tracks
-const ROUTE_PATH_COLOR = "#2563eb"; // blue — canonical route geometry
+const PINE = "#28794f";
+const CLAY = "#a4512d";
+const SUGGESTED_COLOR = CLAY;
+const FOR_YOU_COLOR = "#3c7e91";
+const CLIMB_PATH_COLOR = PINE;
+const ROUTE_PATH_COLOR = CLAY;
 
 function suggestedFilter(enabled: string[]): maplibregl.FilterSpecification {
   return ["in", ["get", "category"], ["literal", enabled]];
@@ -63,11 +65,13 @@ export function MapView({
   suggested,
   forYou = [],
   paths = [],
+  summaryLabel = "United Kingdom",
 }: {
   climbs: ClimbFeature[];
   suggested: SuggestedFeature[];
   forYou?: ForYouFeature[];
   paths?: StoredPath[];
+  summaryLabel?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -100,7 +104,7 @@ export function MapView({
             attribution: "© OpenStreetMap contributors",
           },
         },
-        layers: [{ id: "osm", type: "raster", source: "osm" }],
+        layers: [{ id: "osm", type: "raster", source: "osm", paint: { "raster-saturation": -0.76, "raster-opacity": 0.78, "raster-brightness-max": 0.92 } }],
       },
       center: [-3.5, 54.5], // UK-ish default when there's nothing to fit
       zoom: 4.5,
@@ -136,7 +140,7 @@ export function MapView({
         source: CLIMBS_SOURCE,
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#0f766e",
+          "circle-color": PINE,
           "circle-opacity": 0.85,
           "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 50, 28],
         },
@@ -191,7 +195,7 @@ export function MapView({
         source: CLIMBS_SOURCE,
         filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": "#0f766e",
+          "circle-color": PINE,
           "circle-radius": 7,
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
@@ -231,6 +235,15 @@ export function MapView({
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
         },
+      });
+
+      map.addLayer({
+        id: "suggested-labels",
+        type: "symbol",
+        source: SUGGESTED_SOURCE,
+        filter: suggestedFilter(enabledRef.current),
+        layout: { "text-field": ["get", "gradeRaw"], "text-size": 10, "text-offset": [0, -1.35], "text-anchor": "bottom", "text-allow-overlap": false },
+        paint: { "text-color": CLAY, "text-halo-color": "#fffdf8", "text-halo-width": 2 },
       });
 
       map.addSource(PATHS_SOURCE, {
@@ -406,6 +419,7 @@ export function MapView({
     const map = mapRef.current;
     if (!map || !map.getLayer("suggested-points")) return;
     map.setFilter("suggested-points", suggestedFilter(enabled));
+    if (map.getLayer("suggested-labels")) map.setFilter("suggested-labels", suggestedFilter(enabled));
   }, [enabled]);
 
   useEffect(() => {
@@ -427,9 +441,9 @@ export function MapView({
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="relative overflow-hidden rounded-xl border bg-card">
       {(categories.length > 0 || forYou.length > 0 || paths.length > 0) && (
-        <div className="flex flex-wrap items-center gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-4 border-b bg-card px-4 py-3 text-sm">
           {paths.some((path) => path.kind === "climb") && (
             <span className="text-muted-foreground">
               <span className="mr-1 inline-block h-1 w-4 rounded align-middle" style={{ backgroundColor: CLIMB_PATH_COLOR }} />
@@ -479,7 +493,12 @@ export function MapView({
           )}
         </div>
       )}
-      <div ref={containerRef} className="h-[70vh] w-full rounded-lg border" />
+      <div className="relative">
+        <div className="pointer-events-none absolute top-4 left-4 z-10 rounded-lg border bg-background/92 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.05em] shadow-sm backdrop-blur">
+          {summaryLabel} · {climbs.length + suggested.length + forYou.length} points
+        </div>
+        <div ref={containerRef} className="h-[72vh] min-h-[500px] w-full" />
+      </div>
     </div>
   );
 }

@@ -36,6 +36,9 @@ function parseRouteForm(formData: FormData):
     area: formData.get("area") ?? undefined,
     lat: formData.get("lat"),
     lng: formData.get("lng"),
+    lengthM: formData.get("lengthM"),
+    ascentM: formData.get("ascentM"),
+    estimatedDurationMins: formData.get("estimatedDurationMins"),
     description: formData.get("description") ?? undefined,
   });
 
@@ -110,6 +113,9 @@ function routeData(
     lng: start?.lng ?? input.lng ?? null,
     pathGeojson: (geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
     pathSource: geometry ? (source as PathSource) : null,
+    lengthM: input.lengthM ?? null,
+    ascentM: input.ascentM ?? null,
+    estimatedDurationMins: input.estimatedDurationMins ?? null,
     description: input.description || null,
   };
 }

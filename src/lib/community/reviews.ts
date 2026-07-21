@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
+import { CLIMB_CONDITIONS, CLIMB_VARIANTS } from "@/lib/climbs/validation";
 
 export const reviewInputSchema = z.object({
   rating: z.coerce.number().int().min(1, "Choose a rating from 1 to 5").max(5),
@@ -8,6 +9,8 @@ export const reviewInputSchema = z.object({
     (value) => (value === "" || value == null ? undefined : value),
     z.iso.date({ error: "Climbed-on date must be a valid date" }).optional()
   ),
+  variant: z.enum(CLIMB_VARIANTS).optional(),
+  conditions: z.array(z.enum(CLIMB_CONDITIONS)).max(CLIMB_CONDITIONS.length).default([]),
 });
 
 export type ReviewInput = z.infer<typeof reviewInputSchema>;

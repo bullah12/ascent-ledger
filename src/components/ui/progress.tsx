@@ -3,10 +3,12 @@ import { cn } from "@/lib/utils";
 export function Progress({
   value,
   className,
+  indicatorClassName,
 }: {
   /** 0–100 */
   value: number;
   className?: string;
+  indicatorClassName?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
@@ -19,8 +21,8 @@ export function Progress({
     >
       <div
         className={cn(
-          "h-full rounded-full transition-all",
-          clamped >= 100 ? "bg-green-600" : "bg-primary"
+          "h-full rounded-full bg-primary transition-all",
+          indicatorClassName
         )}
         style={{ width: `${clamped}%` }}
       />

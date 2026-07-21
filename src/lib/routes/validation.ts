@@ -34,6 +34,9 @@ export const routeInputSchema = z
         .min(-180, "Longitude out of range")
         .max(180, "Longitude out of range")
     ),
+    lengthM: optionalNumber(z.number().int().nonnegative("Distance cannot be negative")),
+    ascentM: optionalNumber(z.number().int().nonnegative("Ascent cannot be negative")),
+    estimatedDurationMins: optionalNumber(z.number().int().positive("Duration must be positive")),
     description: z
       .string()
       .trim()

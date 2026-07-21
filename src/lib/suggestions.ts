@@ -453,7 +453,8 @@ export async function getForYouSuggestions(
   prisma: PrismaClient,
   userId: string,
   now = new Date(),
-  limit = 30
+  limit = 30,
+  exploreLevelOverride?: number,
 ): Promise<ForYouSuggestion[]> {
   const [preference, climbs, routes] = await Promise.all([
     prisma.userPreference.findUnique({ where: { userId } }),
@@ -535,7 +536,7 @@ export async function getForYouSuggestions(
     preferredTagSlugs: preference.preferredTagSlugs,
     gradeWindows: parseGradeWindows(preference.gradeWindowsJson),
     maxTripLengthDays: preference.maxTripLengthDays,
-    exploreLevel: clamp01(preference.exploreLevel),
+    exploreLevel: clamp01(exploreLevelOverride ?? preference.exploreLevel),
     weights: parseSuggestionWeights(preference.suggestionWeightsJson),
   };
   return scoreCandidateRoutes(

@@ -21,6 +21,8 @@ export async function saveReview(
     rating: formData.get("rating"),
     text: formData.get("text") || undefined,
     climbedOn: formData.get("climbedOn") || undefined,
+    variant: formData.get("variant") || undefined,
+    conditions: formData.getAll("conditions"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const route = await prisma.route.findUnique({ where: { id: routeId }, select: { id: true } });
@@ -34,6 +36,8 @@ export async function saveReview(
           rating: parsed.data.rating,
           text: parsed.data.text || null,
           climbedOn: parsed.data.climbedOn ? new Date(parsed.data.climbedOn) : null,
+          variant: parsed.data.variant ?? null,
+          conditions: parsed.data.conditions,
         },
         create: {
           routeId,
@@ -41,6 +45,8 @@ export async function saveReview(
           rating: parsed.data.rating,
           text: parsed.data.text || null,
           climbedOn: parsed.data.climbedOn ? new Date(parsed.data.climbedOn) : null,
+          variant: parsed.data.variant ?? null,
+          conditions: parsed.data.conditions,
         },
       });
     });
@@ -79,6 +85,25 @@ export async function toggleRouteTag(formData: FormData): Promise<void> {
       where: { routeId_tagId_userId: { routeId, tagId: tag.id, userId: user.id } },
       update: {},
       create: { routeId, tagId: tag.id, userId: user.id },
+    });
+  }
+  revalidatePath(`/routes/${routeId}`);
+}
+
+export async function toggleSavedRoute(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const routeId = formData.get("routeId");
+  const saved = formData.get("saved") === "true";
+  if (typeof routeId !== "string") return;
+  const route = await prisma.route.findUnique({ where: { id: routeId }, select: { id: true } });
+  if (!route) return;
+  if (saved) {
+    await prisma.savedRoute.deleteMany({ where: { routeId, userId: user.id } });
+  } else {
+    await prisma.savedRoute.upsert({
+      where: { userId_routeId: { userId: user.id, routeId } },
+      update: {},
+      create: { userId: user.id, routeId },
     });
   }
   revalidatePath(`/routes/${routeId}`);

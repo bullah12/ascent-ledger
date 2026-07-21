@@ -151,18 +151,22 @@ export default async function MapPage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 p-4 sm:p-6">
+    <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 pb-10 sm:px-6 lg:px-8">
       <SiteNav current="/map" />
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Map</h1>
+      <div className="mb-6 flex items-end justify-between gap-5">
+        <div>
+        <p className="instrument-label mb-2 text-primary">Route intelligence</p>
+        <h1 className="page-title">Map</h1>
         <p className="text-sm text-muted-foreground">
           {features.length === 0
             ? "No mappable climbs yet — draw/import a track or link a climb to a located route."
             : `${features.length} of ${totalClimbs} logged climbs have a track or representative location.`}
         </p>
+        </div>
+        <Link href="/routes" className="font-mono text-[11px] uppercase tracking-[0.06em] text-primary hover:underline">Browse routes →</Link>
       </div>
 
-      <MapView climbs={features} suggested={suggested} forYou={forYou} paths={paths} />
+      <MapView climbs={features} suggested={suggested} forYou={forYou} paths={paths} summaryLabel={user.preference.homeRegion ?? "United Kingdom"} />
 
       {routeAttributions.length > 0 && (
         <p className="mt-2 text-xs text-muted-foreground">

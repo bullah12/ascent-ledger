@@ -27,6 +27,7 @@ import {
   pathSourceForFormat,
   type TrackPathSource,
 } from "@/lib/tracks";
+import { recomputeReviewAggregate } from "@/lib/community/reviews";
 
 export type ClimbFormState = {
   error?: string;
@@ -43,6 +44,12 @@ function parseForm(formData: FormData):
     gradeSystem: formData.get("gradeSystem"),
     gradeRaw: formData.get("gradeRaw"),
     ascentStyle: formData.get("ascentStyle"),
+    ascentM: formData.get("ascentM"),
+    durationMinutes: formData.get("durationMinutes"),
+    variant: formData.get("variant") || undefined,
+    conditions: formData.getAll("conditions"),
+    partners: formData.get("partners") ?? undefined,
+    rating: formData.get("rating"),
     area: formData.get("area") ?? undefined,
     notes: formData.get("notes") ?? undefined,
     routeId: formData.get("routeId") || undefined,
@@ -78,6 +85,14 @@ function toClimbData(input: ClimbInput, areaId: string | null) {
     // the climb still saves and shows as "ungraded" on the dashboard.
     gradeNormalisedScore: normaliseGrade(input.gradeSystem, input.gradeRaw),
     ascentStyle: input.ascentStyle,
+    ascentM: input.ascentM ?? null,
+    durationMinutes: input.durationMinutes ?? null,
+    variant: input.variant ?? null,
+    conditions: input.conditions,
+    partners: input.partners
+      ? input.partners.split(",").map((partner) => partner.trim()).filter(Boolean)
+      : [],
+    rating: input.rating ?? null,
     areaId,
     notes: input.notes || null,
     visibility: input.visibility,
@@ -181,6 +196,13 @@ export async function createClimb(
   const user = await requireUser();
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
+  const publishReview = formData.get("intent") === "publish-review";
+  if (publishReview && !parsed.input.routeId) {
+    return { error: "Link this log to a route before publishing it as a review." };
+  }
+  if (publishReview && !parsed.input.rating) {
+    return { fieldErrors: { rating: "Choose a rating before publishing a review" } };
+  }
   const submittedTrack = parseTrackSubmission(formData);
   if (!submittedTrack.ok) return { error: submittedTrack.error };
 
@@ -193,16 +215,42 @@ export async function createClimb(
 
   try {
     const areaId = await resolveAreaId(parsed.input.area);
-    await prisma.climb.create({
-      data: {
-        userId: user.id,
-        ...toClimbData(parsed.input, areaId),
-        photoUrls: uploaded.photoUrls,
-        gpxTrackUrl: uploaded.rawTrackUrl,
-        pathGeojson:
-          (track.geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
-        pathSource: track.geometry ? (track.source as PathSource) : null,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.climb.create({
+        data: {
+          userId: user.id,
+          ...toClimbData(parsed.input, areaId),
+          photoUrls: uploaded.photoUrls,
+          gpxTrackUrl: uploaded.rawTrackUrl,
+          pathGeojson:
+            (track.geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+          pathSource: track.geometry ? (track.source as PathSource) : null,
+        },
+      });
+      if (publishReview && parsed.input.routeId && parsed.input.rating) {
+        await tx.routeReview.upsert({
+          where: {
+            routeId_userId: { routeId: parsed.input.routeId, userId: user.id },
+          },
+          update: {
+            rating: parsed.input.rating,
+            text: parsed.input.notes || null,
+            climbedOn: new Date(parsed.input.date),
+            variant: parsed.input.variant ?? null,
+            conditions: parsed.input.conditions,
+          },
+          create: {
+            routeId: parsed.input.routeId,
+            userId: user.id,
+            rating: parsed.input.rating,
+            text: parsed.input.notes || null,
+            climbedOn: new Date(parsed.input.date),
+            variant: parsed.input.variant ?? null,
+            conditions: parsed.input.conditions,
+          },
+        });
+        await recomputeReviewAggregate(tx, parsed.input.routeId);
+      }
     });
   } catch {
     return { error: "Could not save the climb. Please try again." };
@@ -210,6 +258,8 @@ export async function createClimb(
 
   revalidatePath("/logbook");
   revalidatePath("/map");
+  revalidatePath("/dashboard");
+  revalidatePath("/progress");
   if (parsed.input.routeId) revalidatePath(`/routes/${parsed.input.routeId}`);
   redirect("/logbook");
 }
@@ -222,6 +272,10 @@ export async function updateClimb(
   const user = await requireUser();
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
+  const publishReview = formData.get("intent") === "publish-review";
+  if (publishReview && (!parsed.input.routeId || !parsed.input.rating)) {
+    return { error: "Link a route and choose a rating before publishing a review." };
+  }
   const submittedTrack = parseTrackSubmission(formData);
   if (!submittedTrack.ok) return { error: submittedTrack.error };
 
@@ -252,16 +306,42 @@ export async function updateClimb(
 
   try {
     const areaId = await resolveAreaId(parsed.input.area);
-    await prisma.climb.update({
-      where: { id: climbId },
-      data: {
-        ...toClimbData(parsed.input, areaId),
-        photoUrls: [...keptPhotos, ...uploaded.photoUrls],
-        gpxTrackUrl,
-        pathGeojson:
-          (track.geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
-        pathSource: track.geometry ? (track.source as PathSource) : null,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.climb.update({
+        where: { id: climbId },
+        data: {
+          ...toClimbData(parsed.input, areaId),
+          photoUrls: [...keptPhotos, ...uploaded.photoUrls],
+          gpxTrackUrl,
+          pathGeojson:
+            (track.geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+          pathSource: track.geometry ? (track.source as PathSource) : null,
+        },
+      });
+      if (publishReview && parsed.input.routeId && parsed.input.rating) {
+        await tx.routeReview.upsert({
+          where: {
+            routeId_userId: { routeId: parsed.input.routeId, userId: user.id },
+          },
+          update: {
+            rating: parsed.input.rating,
+            text: parsed.input.notes || null,
+            climbedOn: new Date(parsed.input.date),
+            variant: parsed.input.variant ?? null,
+            conditions: parsed.input.conditions,
+          },
+          create: {
+            routeId: parsed.input.routeId,
+            userId: user.id,
+            rating: parsed.input.rating,
+            text: parsed.input.notes || null,
+            climbedOn: new Date(parsed.input.date),
+            variant: parsed.input.variant ?? null,
+            conditions: parsed.input.conditions,
+          },
+        });
+        await recomputeReviewAggregate(tx, parsed.input.routeId);
+      }
     });
   } catch {
     return { error: "Could not save the climb. Please try again." };
@@ -278,6 +358,8 @@ export async function updateClimb(
 
   revalidatePath("/logbook");
   revalidatePath("/map");
+  revalidatePath("/dashboard");
+  revalidatePath("/progress");
   if (existing.routeId) revalidatePath(`/routes/${existing.routeId}`);
   if (parsed.input.routeId) revalidatePath(`/routes/${parsed.input.routeId}`);
   redirect("/logbook");
