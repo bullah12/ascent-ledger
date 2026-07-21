@@ -19,8 +19,9 @@ const GRAPHQL_ENDPOINT = "https://api.openbeta.io/graphql";
 const UK_ROOT_UUID = "ff4fd85d-f006-5be4-97bf-afc87f85ffb3";
 const REQUEST_DELAY_MS = 300;
 
-function rootUuid(): string {
-  return process.env.OPENBETA_ROOT_UUID || UK_ROOT_UUID;
+function rootUuids(): string[] {
+  return (process.env.OPENBETA_ROOT_UUIDS || process.env.OPENBETA_ROOT_UUID || UK_ROOT_UUID)
+    .split(",").map((value) => value.trim()).filter(Boolean);
 }
 
 type ObClimb = {
@@ -61,8 +62,8 @@ const AREA_QUERY = `
   }
 `;
 
-async function fetchArea(uuid: string): Promise<ObArea | null> {
-  const response = await fetch(GRAPHQL_ENDPOINT, {
+async function fetchArea(uuid: string, fetchImpl: typeof fetch): Promise<ObArea | null> {
+  const response = await fetchImpl(GRAPHQL_ENDPOINT, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query: AREA_QUERY, variables: { uuid } }),
@@ -115,6 +116,10 @@ function toExternalRoute(climb: ObClimb, area: ObArea): ExternalRoute | null {
     pitches: null,
     description: climb.content?.description?.trim() || null,
     qualityRating: null,
+    licence: "CC0 1.0",
+    licenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    attribution: "OpenBeta contributors",
+    rawMetadata: { areaUuid: area.uuid, pathTokens: area.pathTokens, types: climb.type, grades: climb.grades },
     area: {
       name: area.areaName.trim(),
       region,
@@ -123,47 +128,79 @@ function toExternalRoute(climb: ObClimb, area: ObArea): ExternalRoute | null {
   };
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const openBetaImporter: RouteImporter = {
+export function createOpenBetaImporter({
+  fetchImpl = fetch,
+  sleepImpl = sleep,
+}: { fetchImpl?: typeof fetch; sleepImpl?: (ms: number) => Promise<void> } = {}): RouteImporter {
+ return {
   source: "openbeta",
+  precedence: 200,
+  defaultLicence: "CC0 1.0",
+  defaultLicenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+  defaultAttribution: "OpenBeta contributors",
 
-  async *fetchRoutes({ maxRoutes, log }: ImporterOptions) {
+  async *fetchRoutes({ maxRoutes, log, cursor, snapshotId }: ImporterOptions) {
     // Depth-first so we reach leaf crags (where the climbs are) quickly.
     // totalClimbs is 0 on intermediate areas, so it can't prune the walk;
     // maxRequests bounds API load on sparse subtrees instead.
-    const stack: string[] = [rootUuid()];
-    const visited = new Set<string>();
+    type StackEntry = { uuid: string; climbOffset: number };
+    let stored: { stack: StackEntry[]; visited: string[] } | null = null;
+    try { stored = cursor ? JSON.parse(cursor) as { stack: StackEntry[]; visited: string[] } : null; } catch { stored = null; }
+    const stack: StackEntry[] = stored?.stack?.length
+      ? stored.stack
+      : [...rootUuids()].reverse().map((uuid) => ({ uuid, climbOffset: 0 }));
+    const visited = new Set<string>(stored?.visited ?? []);
     const maxRequests = Math.max(100, maxRoutes * 2);
     let requests = 0;
     let yielded = 0;
 
-    while (stack.length > 0 && yielded < maxRoutes && requests < maxRequests) {
-      const uuid = stack.pop()!;
+    traversal: while (stack.length > 0 && yielded < maxRoutes && requests < maxRequests) {
+      const current = stack.pop()!;
+      const uuid = current.uuid;
       if (visited.has(uuid)) continue;
-      visited.add(uuid);
 
       requests++;
-      const area = await fetchArea(uuid);
-      await sleep(REQUEST_DELAY_MS);
+      const area = await fetchArea(uuid, fetchImpl);
+      await sleepImpl(REQUEST_DELAY_MS);
       if (!area) continue;
 
       if (area.climbs.length > 0) {
         log?.(`openbeta: ${area.pathTokens.join(" / ")} — ${area.climbs.length} climbs`);
       }
 
-      for (const climb of area.climbs) {
-        if (yielded >= maxRoutes) return;
+      for (let climbIndex = current.climbOffset; climbIndex < area.climbs.length; climbIndex++) {
+        const climb = area.climbs[climbIndex];
         const route = toExternalRoute(climb, area);
         if (route) {
           yielded++;
-          yield route;
+          yield { ...route, importCursor: JSON.stringify({ stack, visited: [...visited] }) };
+          if (yielded >= maxRoutes) {
+            if (climbIndex + 1 < area.climbs.length) stack.push({ uuid, climbOffset: climbIndex + 1 });
+            else {
+              visited.add(uuid);
+              for (const child of area.children) if (!visited.has(child.uuid)) stack.push({ uuid: child.uuid, climbOffset: 0 });
+            }
+            break traversal;
+          }
         }
       }
 
+      visited.add(uuid);
       for (const child of area.children) {
-        if (!visited.has(child.uuid)) stack.push(child.uuid);
+        if (!visited.has(child.uuid)) stack.push({ uuid: child.uuid, climbOffset: 0 });
       }
     }
+    const snapshotComplete = stack.length === 0;
+    return {
+      nextCursor: snapshotComplete ? null : JSON.stringify({ stack, visited: [...visited] }),
+      snapshotId: snapshotId ?? new Date().toISOString().slice(0, 10),
+      snapshotComplete,
+      state: { requests },
+    };
   },
-};
+ };
+}
+
+export const openBetaImporter = createOpenBetaImporter();

@@ -10,13 +10,17 @@ on:
     inputs:
       max:
         description: "Max routes per source"
-        default: "200"
+        default: "500"
+        required: false
+      shard:
+        description: "Geofabrik shard key or rotate"
+        default: "rotate"
         required: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,8 +33,14 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
-      - name: Sync routes
-        run: npm run sync:routes -- --max=${{ github.event.inputs.max || '200' }}
+      - name: Sync rotating Europe OSM shard
+        continue-on-error: true
+        run: npm run sync:routes -- --source=osm_geofabrik --shard=${{ github.event.inputs.shard || 'rotate' }} --max=${{ github.event.inputs.max || '500' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEOFABRIK_MAX_DOWNLOAD_MB: "4096"
+      - name: Sync open catalogues and official overlays
+        run: npm run sync:routes -- --source=openbeta,camptocamp,national_trails_england,national_trails_wales,england_coast_path,sweden_naturvardsverket --max=${{ github.event.inputs.max || '500' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NATURESCOT_TRAILS_GEOJSON_URL: ${{ secrets.NATURESCOT_TRAILS_GEOJSON_URL }}

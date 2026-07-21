@@ -14,7 +14,6 @@ import {
 import { lineStartPoint, lineStringOrNull } from "@/lib/tracks";
 import {
   sourceAttribution,
-  sourceAttributions,
 } from "@/lib/importers/source-attribution";
 import { getForYouSuggestions } from "@/lib/suggestions";
 
@@ -60,6 +59,10 @@ export default async function MapPage() {
         pathGeojson: true,
         pathSource: true,
         externalSource: true,
+        sourceRecords: {
+          where: { status: "active" },
+          select: { source: true, externalUrl: true, attribution: true, licence: true, licenceUrl: true },
+        },
       },
       orderBy: { updatedAt: "desc" },
       take: 500,
@@ -108,12 +111,18 @@ export default async function MapPage() {
       name: route.name,
       kind: "route",
       source: route.pathSource?.replaceAll("_", " ") ?? null,
-      attribution: sourceAttribution(route.externalSource)?.attribution ?? null,
+      attribution: route.sourceRecords.map((record) => record.attribution).join(" · ") || sourceAttribution(route.externalSource)?.attribution || null,
     });
   }
-  const routeAttributions = sourceAttributions(
-    routesWithPaths.map((route) => route.externalSource)
-  );
+  const routeAttributions = [...new Map(routesWithPaths.flatMap((route) =>
+    route.sourceRecords.map((record) => [`${record.source}:${record.licence}`, {
+      label: record.source,
+      attribution: record.attribution,
+      licence: record.licence,
+      licenceUrl: record.licenceUrl,
+      sourceUrl: record.externalUrl,
+    }] as const)
+  )).values()];
 
   // Suggested routes across all unmet rules, deduped (a route can close
   // more than one gap), keeping the discipline for the per-category toggle.

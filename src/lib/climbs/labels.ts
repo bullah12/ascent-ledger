@@ -5,6 +5,7 @@ export const disciplineLabels: Record<Discipline, string> = {
   winter: "Winter",
   alpine: "Alpine",
   ski_touring: "Ski touring",
+  via_ferrata: "Via ferrata",
   hiking: "Hiking",
 };
 

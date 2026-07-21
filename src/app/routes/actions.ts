@@ -120,6 +120,21 @@ function routeData(
   };
 }
 
+const MANUAL_ROUTE_FIELDS = [
+  "name", "discipline", "gradeSystem", "gradeRaw", "gradeNormalisedScore", "areaId",
+  "lat", "lng", "pathGeojson", "pathSource", "lengthM", "ascentM",
+  "estimatedDurationMins", "description",
+] as const;
+
+function userEditedFieldMeta(existing: unknown = null) {
+  const meta = existing && typeof existing === "object"
+    ? { ...(existing as Record<string, unknown>) }
+    : {};
+  const editedAt = new Date().toISOString();
+  for (const field of MANUAL_ROUTE_FIELDS) meta[field] = { source: "user", precedence: 1000, userEdited: true, editedAt };
+  return meta as Prisma.InputJsonValue;
+}
+
 export async function createRoute(
   _prev: RouteFormState,
   formData: FormData
@@ -137,6 +152,7 @@ export async function createRoute(
       data: {
         ...routeData(parsed.input, areaId, track.geometry, track.source),
         externalSource: "manual",
+        canonicalFieldMetaJson: userEditedFieldMeta(),
       },
     });
   } catch {
@@ -159,14 +175,17 @@ export async function updateRoute(
   const track = await parseRouteTrack(formData);
   if (!track.ok) return { error: track.error };
 
-  const existing = await prisma.route.findUnique({ where: { id: routeId }, select: { id: true } });
+  const existing = await prisma.route.findUnique({ where: { id: routeId }, select: { id: true, canonicalFieldMetaJson: true } });
   if (!existing) return { error: "This route no longer exists." };
 
   try {
     const areaId = await resolveAreaId(parsed.input.area);
     await prisma.route.update({
       where: { id: routeId },
-      data: routeData(parsed.input, areaId, track.geometry, track.source),
+      data: {
+        ...routeData(parsed.input, areaId, track.geometry, track.source),
+        canonicalFieldMetaJson: userEditedFieldMeta(existing.canonicalFieldMetaJson),
+      },
     });
   } catch {
     return { error: "Could not save the route. Please try again." };

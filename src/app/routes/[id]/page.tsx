@@ -29,7 +29,10 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
   const user = await requireOnboardedUser();
   const route = await prisma.route.findUnique({
     where: { id },
-    include: { area: { select: { name: true, region: true, country: true } } },
+    include: {
+      area: { select: { name: true, region: true, country: true } },
+      sourceRecords: { where: { status: "active" }, orderBy: { source: "asc" } },
+    },
   });
   if (!route) notFound();
 
@@ -58,7 +61,16 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
     prisma.savedRoute.findUnique({ where: { userId_routeId: { userId: user.id, routeId: route.id } }, select: { routeId: true } }),
   ]);
 
-  const attribution = sourceAttribution(route.externalSource);
+  const legacyAttribution = sourceAttribution(route.externalSource);
+  const difficultyDerived = route.sourceRecords.some((record) => {
+    const provenance = record.fieldProvenanceJson as { difficulty?: { derived?: boolean } } | null;
+    return provenance?.difficulty?.derived;
+  });
+  const distanceCalculated = route.calculatedLengthM !== null && route.lengthM === route.calculatedLengthM;
+  const displayedAscent = route.ascentM ?? route.calculatedAscentM;
+  const ascentCalculated = route.ascentM === null && route.calculatedAscentM !== null;
+  const displayedDuration = route.estimatedDurationMins ?? route.calculatedDurationMins;
+  const durationCalculated = route.calculatedDurationMins !== null && route.estimatedDurationMins === route.calculatedDurationMins;
   const selectedTagIds = new Set(ownTags.map((tag) => tag.tagId));
   const publicTicks = projectPublicTicks(publicTickRows);
   const tagChips = tagChipsFromCounts(tags);
@@ -100,10 +112,10 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
         <div className="space-y-8 py-8 lg:pr-8">
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: "Distance", value: route.lengthM ? `${(route.lengthM / 1000).toFixed(1)} km` : "—", icon: RouteIcon },
-              { label: "Ascent", value: route.ascentM !== null ? `${route.ascentM.toLocaleString()} m` : "—", icon: TrendingUp },
-              { label: "Time", value: formatDuration(route.estimatedDurationMins), icon: Clock3 },
-              { label: "Grade", value: route.gradeRaw ?? "—", icon: Mountain },
+              { label: `Distance${route.lengthM !== null ? distanceCalculated ? " · calculated" : " · official" : ""}`, value: route.lengthM ? `${(route.lengthM / 1000).toFixed(1)} km` : "—", icon: RouteIcon },
+              { label: `Ascent${displayedAscent !== null ? ascentCalculated ? " · calculated" : " · official" : ""}`, value: displayedAscent !== null ? `${displayedAscent.toLocaleString()} m` : "—", icon: TrendingUp },
+              { label: `Time${displayedDuration !== null ? durationCalculated ? " · calculated" : " · official" : ""}`, value: formatDuration(displayedDuration), icon: Clock3 },
+              { label: `Grade${difficultyDerived ? " · derived" : route.gradeRaw ? " · source" : ""}`, value: route.gradeRaw ?? "—", icon: Mountain },
             ].map((stat) => (
               <Card key={stat.label} className="gap-2 p-4 py-4">
                 <dt className="instrument-label flex items-center gap-1.5"><stat.icon className="size-3.5 text-primary" />{stat.label}</dt>
@@ -114,6 +126,11 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
 
           <section>
             <h2 className="text-xl font-bold">The route</h2>
+            {(route.geometryCompleteness === "incomplete" || route.geometryCompleteness === "clipped") && (
+              <p className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+                Route geometry is {route.geometryCompleteness}. Some sections may be disconnected or clipped at an extract boundary.
+              </p>
+            )}
             {route.description ? <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-foreground/85">{route.description}</p> : <p className="mt-3 rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No route description has been recorded yet.</p>}
           </section>
 
@@ -145,8 +162,26 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
 
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" render={<Link href={`/routes/${route.id}/edit`} />}>Edit route details</Button>
-            {attribution && <Button variant="ghost" render={<a href={route.externalUrl ?? attribution.sourceUrl} />}>View source record</Button>}
+            {(route.sourceRecords[0] || legacyAttribution) && <Button variant="ghost" render={<a href={route.sourceRecords[0]?.externalUrl ?? route.externalUrl ?? legacyAttribution!.sourceUrl} />}>View source record</Button>}
           </div>
+
+          {(route.sourceRecords.length > 0 || legacyAttribution) && (
+            <section className="rounded-xl border p-4">
+              <h2 className="font-bold">Sources and licences</h2>
+              <ul className="mt-3 grid gap-3 text-sm">
+                {route.sourceRecords.map((record) => (
+                  <li key={record.id}>
+                    <a className="font-medium underline" href={record.externalUrl}>{record.sourceName}</a>
+                    <span className="block text-muted-foreground">{record.attribution} · {record.licence}{record.sourceUpdatedAt ? ` · updated ${record.sourceUpdatedAt.toISOString().slice(0, 10)}` : ""}</span>
+                    {record.licenceUrl && <a className="text-xs underline" href={record.licenceUrl}>Licence terms</a>}
+                  </li>
+                ))}
+                {!route.sourceRecords.length && legacyAttribution && (
+                  <li>{legacyAttribution.attribution} · <a className="underline" href={legacyAttribution.licenceUrl}>{legacyAttribution.licence}</a></li>
+                )}
+              </ul>
+            </section>
+          )}
         </div>
 
         <aside className="space-y-7 border-t py-8 lg:border-t-0 lg:border-l lg:pl-8">

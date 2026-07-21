@@ -131,5 +131,18 @@
     "label": "UIAA",
     "_note": "STUB — no ladder yet; grades in this system show as ungraded. No BMG rule thresholds use it.",
     "entries": []
+  },
+  "via_ferrata_scale": {
+    "label": "Via ferrata",
+    "_note": "OSM 0–6 scale with common K-grade aliases; values stay source-specific.",
+    "entries": [
+      { "score": 0, "label": "0", "aliases": ["0", "K0"] },
+      { "score": 1, "label": "1", "aliases": ["1", "K1", "A"] },
+      { "score": 2, "label": "2", "aliases": ["2", "K2", "B"] },
+      { "score": 3, "label": "3", "aliases": ["3", "K3", "C"] },
+      { "score": 4, "label": "4", "aliases": ["4", "K4", "D"] },
+      { "score": 5, "label": "5", "aliases": ["5", "K5", "E"] },
+      { "score": 6, "label": "6", "aliases": ["6", "K6", "F"] }
+    ]
   }
 }

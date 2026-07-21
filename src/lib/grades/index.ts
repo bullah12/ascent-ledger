@@ -23,6 +23,7 @@ export const gradeSystemLabels: Record<GradeSystem, string> = {
   alpine_overall: "Alpine overall",
   ski_touring_scale: "Ski touring",
   sac_hiking: "SAC hiking",
+  via_ferrata_scale: "Via ferrata",
 };
 
 // Grade systems offered per discipline (first entry = form default).
@@ -31,6 +32,7 @@ export const gradeSystemsByDiscipline: Record<Discipline, GradeSystem[]> = {
   winter: [GradeSystem.scottish_winter, GradeSystem.wi_ice],
   alpine: [GradeSystem.alpine_overall],
   ski_touring: [GradeSystem.ski_touring_scale],
+  via_ferrata: [GradeSystem.via_ferrata_scale],
   hiking: [GradeSystem.sac_hiking],
 };
 

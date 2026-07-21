@@ -1,29 +1,60 @@
 import type { Discipline, GradeSystem } from "@/generated/prisma/enums";
 import type { LineString } from "geojson";
 
-// Pluggable importer interface (PLAN.md §5 point 4): one adapter per
-// source, each yielding source-agnostic ExternalRoute records. Adding a
-// new source means adding one file that implements RouteImporter — the
-// sync runner never changes.
+export type GeometryCompletenessValue = "complete" | "incomplete" | "clipped" | "unknown";
+export type RouteShapeValue = "loop" | "out_and_back" | "point_to_point" | "network" | "unknown";
+
+export type RouteSegment = {
+  role: string;
+  memberType?: "way" | "relation";
+  memberId?: string;
+  geometry: LineString | null;
+  complete: boolean;
+};
+
+export type DifficultyDerivation = {
+  derived: boolean;
+  method: string;
+  rawValues: string[];
+};
 
 export type ExternalRoute = {
-  /** Stable id within the source; upsert key is (source, externalId). */
   externalId: string;
-  /** Public page for attribution/deep-linking (PLAN.md §5 point 3). */
   externalUrl: string;
   name: string;
+  localizedNames?: Record<string, string>;
   discipline: Discipline;
   gradeSystem: GradeSystem | null;
   gradeRaw: string | null;
+  difficultyDerivation?: DifficultyDerivation | null;
   lat: number | null;
   lng: number | null;
   lengthM: number | null;
+  calculatedLengthM?: number | null;
+  ascentM?: number | null;
+  descentM?: number | null;
+  calculatedAscentM?: number | null;
+  estimatedDurationMins?: number | null;
+  calculatedDurationMins?: number | null;
+  routeShape?: RouteShapeValue;
+  routeStatus?: string | null;
   pitches: number | null;
   description: string | null;
-  /** Optional canonical linework, stored through the Phase 8 route path fields. */
   pathGeojson?: LineString | null;
-  /** 1–5 if the source rates quality, else null. */
+  geometrySegments?: RouteSegment[];
+  geometryCompleteness?: GeometryCompletenessValue;
   qualityRating: number | null;
+  officialRef?: string | null;
+  network?: string | null;
+  operator?: string | null;
+  wikidata?: string | null;
+  website?: string | null;
+  sourceUpdatedAt?: Date | null;
+  licence?: string;
+  licenceUrl?: string;
+  attribution?: string;
+  rawMetadata?: Record<string, unknown>;
+  importCursor?: string;
   area: {
     name: string;
     region: string | null;
@@ -31,14 +62,33 @@ export type ExternalRoute = {
   } | null;
 };
 
+export type ImporterCompletion = {
+  nextCursor: string | null;
+  snapshotId: string;
+  snapshotComplete: boolean;
+  etag?: string | null;
+  checksum?: string | null;
+  state?: Record<string, unknown>;
+};
+
 export type ImporterOptions = {
-  /** Hard cap on routes fetched per run — be a polite API citizen. */
   maxRoutes: number;
+  cursor?: string | null;
+  shard?: string;
+  activity?: string;
+  snapshotId?: string | null;
+  localFile?: string;
   log?: (message: string) => void;
 };
 
 export type RouteImporter = {
-  /** Stored in Route.externalSource and RouteImportLog.source. */
   source: string;
-  fetchRoutes(options: ImporterOptions): AsyncGenerator<ExternalRoute>;
+  /** Higher values win canonical fields unless a user has edited that field. */
+  precedence?: number;
+  defaultLicence?: string;
+  defaultLicenceUrl?: string;
+  defaultAttribution?: string;
+  shards?: readonly string[];
+  activities?: readonly string[];
+  fetchRoutes(options: ImporterOptions): AsyncGenerator<ExternalRoute, ImporterCompletion | void>;
 };

@@ -28,6 +28,13 @@ const ATTRIBUTIONS: Record<string, SourceAttribution> = {
     licenceUrl: "https://opendatacommons.org/licenses/odbl/1-0/",
     sourceUrl: "https://www.openstreetmap.org/copyright",
   },
+  osm_geofabrik: {
+    label: "OpenStreetMap (Geofabrik extract)",
+    attribution: "© OpenStreetMap contributors",
+    licence: "ODbL 1.0",
+    licenceUrl: "https://opendatacommons.org/licenses/odbl/1-0/",
+    sourceUrl: "https://download.geofabrik.de/",
+  },
   national_trails_england: {
     label: "National Trails England",
     attribution:
@@ -53,6 +60,48 @@ const ATTRIBUTIONS: Record<string, SourceAttribution> = {
     licenceUrl: "https://www.nature.scot/copyright",
     sourceUrl:
       "https://www.nature.scot/enjoying-outdoors/routes-explore/scotlands-great-trails",
+  },
+  england_coast_path: {
+    label: "King Charles III England Coast Path",
+    attribution: "© Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right 2026.",
+    licence: "Open Government Licence v3.0",
+    licenceUrl: "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    sourceUrl: "https://environment.data.gov.uk/dataset/4006f956-f491-4ca9-ab01-d8c96e873165",
+  },
+  france_datatourisme: {
+    label: "DATAtourisme",
+    attribution: "Individual producer via DATAtourisme; last-update date required",
+    licence: "Etalab Open Licence 2.0",
+    licenceUrl: "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    sourceUrl: "https://www.datatourisme.fr/utiliser-les-donnees/",
+  },
+  sweden_naturvardsverket: {
+    label: "Naturvårdsverket trails",
+    attribution: "Source: Naturvårdsverket and the trail's recorded source owner",
+    licence: "CC0 1.0",
+    licenceUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    sourceUrl: "https://geodata.naturvardsverket.se/friluftsliv/rest/v2/",
+  },
+  finland_lipas: {
+    label: "LIPAS",
+    attribution: "Sports facilities: Lipas.fi, University of Jyväskylä, retrieval date",
+    licence: "CC BY 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/4.0/",
+    sourceUrl: "https://api.lipas.fi/v2/",
+  },
+  norway_kartverket_trails: {
+    label: "Kartverket national route database",
+    attribution: "© Kartverket; route owner/maintainer retained per record",
+    licence: "NLOD 2.0",
+    licenceUrl: "https://data.norge.no/nlod/no/2.0",
+    sourceUrl: "https://www.kartverket.no/geodataarbeid/dok-og-temadata/turruter",
+  },
+  swiss_wanderland: {
+    label: "Wanderland Schweiz",
+    attribution: "Federal Office of Topography swisstopo; title and dataset link",
+    licence: "opendata.swiss open use — source attribution required",
+    licenceUrl: "https://opendata.swiss/en/terms-of-use",
+    sourceUrl: "https://opendata.swiss/en/dataset/swisstlm3d-wanderwege",
   },
 };
 

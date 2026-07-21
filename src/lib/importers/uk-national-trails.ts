@@ -51,7 +51,15 @@ export function parseNationalTrailFeature(
     pitches: null,
     description: null,
     pathGeojson,
+    geometryCompleteness: "complete",
     qualityRating: null,
+    sourceUpdatedAt: (() => {
+      const raw = stringProperty(feature.properties, ["last_edited_date", "updated", "EditDate"]);
+      if (!raw) return null;
+      const date = new Date(raw);
+      return Number.isNaN(date.valueOf()) ? null : date;
+    })(),
+    rawMetadata: { ...feature.properties },
     area: { name: `National Trails — ${country}`, region: country, country: "United Kingdom" },
   };
 }
@@ -69,19 +77,25 @@ export function createNationalTrailsImporter({
 }): RouteImporter {
   return {
     source,
-    async *fetchRoutes({ maxRoutes, log }: ImporterOptions) {
+    async *fetchRoutes({ maxRoutes, log, cursor }: ImporterOptions) {
       const response = await fetchImpl(endpoint, { signal: AbortSignal.timeout(TIMEOUT_MS) });
       if (!response.ok) throw new Error(`${source} HTTP ${response.status}`);
       const collection = (await response.json()) as FeatureCollection;
       let yielded = 0;
-      for (const feature of collection.features ?? []) {
-        if (yielded >= maxRoutes) break;
+      const features = collection.features ?? [];
+      const offset = Math.max(0, Number(cursor ?? 0) || 0);
+      const selected = features.slice(offset, offset + maxRoutes);
+      for (let index = 0; index < selected.length; index++) {
+        const feature = selected[index];
         const route = parseNationalTrailFeature(feature, country);
         if (!route) continue;
         yielded++;
-        yield route;
+        yield { ...route, importCursor: String(offset + index + 1) };
       }
       log?.(`${source}: ${yielded} routes`);
+      const nextOffset = offset + selected.length;
+      const complete = nextOffset >= features.length;
+      return { nextCursor: complete ? null : String(nextOffset), snapshotId: response.headers.get("etag") ?? new Date().toISOString().slice(0, 10), snapshotComplete: complete, etag: response.headers.get("etag") };
     },
   };
 }

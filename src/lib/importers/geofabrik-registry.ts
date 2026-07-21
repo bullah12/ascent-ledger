@@ -1,0 +1,105 @@
+export type GeofabrikShard = {
+  key: string;
+  path: string;
+  country: string;
+  region?: string;
+};
+
+// Country extracts are deliberately separate; the scheduler rotates keys and
+// never downloads Geofabrik's whole-Europe PBF. Large countries can be replaced
+// by finer regional entries without changing the importer contract.
+export const GEOFABRIK_EUROPE_SHARDS: readonly GeofabrikShard[] = [
+  { key: "albania", path: "europe/albania", country: "Albania" },
+  { key: "andorra", path: "europe/andorra", country: "Andorra" },
+  { key: "austria", path: "europe/austria", country: "Austria" },
+  { key: "belarus", path: "europe/belarus", country: "Belarus" },
+  { key: "belgium", path: "europe/belgium", country: "Belgium" },
+  { key: "bosnia-herzegovina", path: "europe/bosnia-herzegovina", country: "Bosnia and Herzegovina" },
+  { key: "bulgaria", path: "europe/bulgaria", country: "Bulgaria" },
+  { key: "croatia", path: "europe/croatia", country: "Croatia" },
+  { key: "cyprus", path: "europe/cyprus", country: "Cyprus" },
+  { key: "czechia", path: "europe/czech-republic", country: "Czechia" },
+  { key: "denmark", path: "europe/denmark", country: "Denmark" },
+  { key: "estonia", path: "europe/estonia", country: "Estonia" },
+  { key: "faroe-islands", path: "europe/faroe-islands", country: "Faroe Islands" },
+  { key: "finland", path: "europe/finland", country: "Finland" },
+  // France and Germany are split below so the scheduled 4 GiB download cap
+  // never silently makes those countries unprocessable.
+  { key: "france-alsace", path: "europe/france/alsace", country: "France", region: "Alsace" },
+  { key: "france-aquitaine", path: "europe/france/aquitaine", country: "France", region: "Aquitaine" },
+  { key: "france-auvergne", path: "europe/france/auvergne", country: "France", region: "Auvergne" },
+  { key: "france-basse-normandie", path: "europe/france/basse-normandie", country: "France", region: "Basse-Normandie" },
+  { key: "france-bourgogne", path: "europe/france/bourgogne", country: "France", region: "Bourgogne" },
+  { key: "france-bretagne", path: "europe/france/bretagne", country: "France", region: "Bretagne" },
+  { key: "france-centre", path: "europe/france/centre", country: "France", region: "Centre" },
+  { key: "france-champagne-ardenne", path: "europe/france/champagne-ardenne", country: "France", region: "Champagne-Ardenne" },
+  { key: "france-corse", path: "europe/france/corse", country: "France", region: "Corse" },
+  { key: "france-franche-comte", path: "europe/france/franche-comte", country: "France", region: "Franche-Comté" },
+  { key: "france-haute-normandie", path: "europe/france/haute-normandie", country: "France", region: "Haute-Normandie" },
+  { key: "france-ile-de-france", path: "europe/france/ile-de-france", country: "France", region: "Île-de-France" },
+  { key: "france-languedoc-roussillon", path: "europe/france/languedoc-roussillon", country: "France", region: "Languedoc-Roussillon" },
+  { key: "france-limousin", path: "europe/france/limousin", country: "France", region: "Limousin" },
+  { key: "france-lorraine", path: "europe/france/lorraine", country: "France", region: "Lorraine" },
+  { key: "france-midi-pyrenees", path: "europe/france/midi-pyrenees", country: "France", region: "Midi-Pyrénées" },
+  { key: "france-nord-pas-de-calais", path: "europe/france/nord-pas-de-calais", country: "France", region: "Nord-Pas-de-Calais" },
+  { key: "france-pays-de-la-loire", path: "europe/france/pays-de-la-loire", country: "France", region: "Pays de la Loire" },
+  { key: "france-picardie", path: "europe/france/picardie", country: "France", region: "Picardie" },
+  { key: "france-poitou-charentes", path: "europe/france/poitou-charentes", country: "France", region: "Poitou-Charentes" },
+  { key: "france-provence-alpes-cote-d-azur", path: "europe/france/provence-alpes-cote-d-azur", country: "France", region: "Provence-Alpes-Côte d'Azur" },
+  { key: "france-rhone-alpes", path: "europe/france/rhone-alpes", country: "France", region: "Rhône-Alpes" },
+  { key: "georgia", path: "europe/georgia", country: "Georgia" },
+  { key: "germany-baden-wuerttemberg", path: "europe/germany/baden-wuerttemberg", country: "Germany", region: "Baden-Württemberg" },
+  { key: "germany-bayern", path: "europe/germany/bayern", country: "Germany", region: "Bayern" },
+  { key: "germany-brandenburg-berlin", path: "europe/germany/brandenburg", country: "Germany", region: "Brandenburg / Berlin" },
+  { key: "germany-hamburg", path: "europe/germany/hamburg", country: "Germany", region: "Hamburg" },
+  { key: "germany-hessen", path: "europe/germany/hessen", country: "Germany", region: "Hessen" },
+  { key: "germany-mecklenburg-vorpommern", path: "europe/germany/mecklenburg-vorpommern", country: "Germany", region: "Mecklenburg-Vorpommern" },
+  { key: "germany-niedersachsen-bremen", path: "europe/germany/niedersachsen", country: "Germany", region: "Niedersachsen / Bremen" },
+  { key: "germany-nordrhein-westfalen", path: "europe/germany/nordrhein-westfalen", country: "Germany", region: "Nordrhein-Westfalen" },
+  { key: "germany-rheinland-pfalz", path: "europe/germany/rheinland-pfalz", country: "Germany", region: "Rheinland-Pfalz" },
+  { key: "germany-saarland", path: "europe/germany/saarland", country: "Germany", region: "Saarland" },
+  { key: "germany-sachsen", path: "europe/germany/sachsen", country: "Germany", region: "Sachsen" },
+  { key: "germany-sachsen-anhalt", path: "europe/germany/sachsen-anhalt", country: "Germany", region: "Sachsen-Anhalt" },
+  { key: "germany-schleswig-holstein", path: "europe/germany/schleswig-holstein", country: "Germany", region: "Schleswig-Holstein" },
+  { key: "germany-thueringen", path: "europe/germany/thueringen", country: "Germany", region: "Thüringen" },
+  { key: "greece", path: "europe/greece", country: "Greece" },
+  { key: "guernsey-jersey", path: "europe/guernsey-jersey", country: "Guernsey / Jersey" },
+  { key: "hungary", path: "europe/hungary", country: "Hungary" },
+  { key: "iceland", path: "europe/iceland", country: "Iceland" },
+  { key: "ireland-ni", path: "europe/ireland-and-northern-ireland", country: "Ireland / United Kingdom", region: "Ireland and Northern Ireland" },
+  { key: "isle-of-man", path: "europe/isle-of-man", country: "Isle of Man" },
+  { key: "italy", path: "europe/italy", country: "Italy" },
+  { key: "kosovo", path: "europe/kosovo", country: "Kosovo" },
+  { key: "latvia", path: "europe/latvia", country: "Latvia" },
+  { key: "liechtenstein", path: "europe/liechtenstein", country: "Liechtenstein" },
+  { key: "lithuania", path: "europe/lithuania", country: "Lithuania" },
+  { key: "luxembourg", path: "europe/luxembourg", country: "Luxembourg" },
+  { key: "malta", path: "europe/malta", country: "Malta" },
+  { key: "moldova", path: "europe/moldova", country: "Moldova" },
+  { key: "monaco", path: "europe/monaco", country: "Monaco" },
+  { key: "montenegro", path: "europe/montenegro", country: "Montenegro" },
+  { key: "netherlands", path: "europe/netherlands", country: "Netherlands" },
+  { key: "north-macedonia", path: "europe/macedonia", country: "North Macedonia" },
+  { key: "norway", path: "europe/norway", country: "Norway" },
+  { key: "poland", path: "europe/poland", country: "Poland" },
+  { key: "portugal", path: "europe/portugal", country: "Portugal" },
+  { key: "romania", path: "europe/romania", country: "Romania" },
+  { key: "russia", path: "russia", country: "Russia" },
+  { key: "serbia", path: "europe/serbia", country: "Serbia" },
+  { key: "slovakia", path: "europe/slovakia", country: "Slovakia" },
+  { key: "slovenia", path: "europe/slovenia", country: "Slovenia" },
+  { key: "spain", path: "europe/spain", country: "Spain" },
+  { key: "sweden", path: "europe/sweden", country: "Sweden" },
+  { key: "switzerland", path: "europe/switzerland", country: "Switzerland" },
+  { key: "turkey", path: "europe/turkey", country: "Turkey" },
+  { key: "uk-england", path: "europe/great-britain/england", country: "United Kingdom", region: "England" },
+  { key: "uk-scotland", path: "europe/great-britain/scotland", country: "United Kingdom", region: "Scotland" },
+  { key: "uk-wales", path: "europe/great-britain/wales", country: "United Kingdom", region: "Wales" },
+  { key: "ukraine", path: "europe/ukraine", country: "Ukraine" },
+] as const;
+
+export function geofabrikShard(key: string): GeofabrikShard {
+  const shard = GEOFABRIK_EUROPE_SHARDS.find((candidate) => candidate.key === key);
+  if (!shard) throw new Error(`Unknown Geofabrik shard: ${key}`);
+  return shard;
+}

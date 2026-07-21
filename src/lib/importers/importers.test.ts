@@ -83,6 +83,7 @@ describe("Phase 9 route importers", () => {
   it("loads a configured official NatureScot distribution and fails clearly when absent", async () => {
     const importer = createNatureScotGreatTrailsImporter({
       dataUrl: "https://fixture.invalid/great-trails.geojson",
+      licence: "Open Government Licence v3.0",
       fetchImpl: (async () => jsonResponse(greatTrailsFixture)) as typeof fetch,
     });
     const routes = await collect(importer);
@@ -99,11 +100,26 @@ describe("Phase 9 route importers", () => {
   it("records a source failure without preventing the next source", async () => {
     const logs: unknown[] = [];
     const createdRoutes: unknown[] = [];
+    const markStale = vi.fn(async () => ({ count: 0 }));
     const fakePrisma = {
       routeImportLog: { create: async (value: unknown) => logs.push(value) },
-      route: {
+      routeImportCheckpoint: {
         findUnique: async () => null,
-        create: async (value: unknown) => createdRoutes.push(value),
+        upsert: async () => undefined,
+      },
+      routeSourceRecord: {
+        findUnique: async () => null,
+        upsert: async () => undefined,
+        updateMany: markStale,
+      },
+      routeMergeSuggestion: { upsert: async () => undefined },
+      route: {
+        findMany: async () => [],
+        update: async () => undefined,
+        create: async (value: unknown) => {
+          createdRoutes.push(value);
+          return { id: "route-fixture" };
+        },
       },
     } as unknown as PrismaClient;
     const failed: RouteImporter = {
@@ -138,11 +154,32 @@ describe("Phase 9 route importers", () => {
     const first = await syncSource(fakePrisma, failed, options);
     const second = await syncSource(fakePrisma, healthy, options);
     expect(first.errors[0].message).toContain("source aborted");
+    expect(markStale).not.toHaveBeenCalled();
     expect(second).toMatchObject({ added: 1, updated: 0, errors: [] });
     expect(logs).toHaveLength(2);
     expect(createdRoutes).toHaveLength(1);
     expect(createdRoutes[0]).toMatchObject({
       data: { pathSource: "import", lat: 50, lng: -2 },
     });
+  });
+
+  it("marks missing records stale only after a successful complete snapshot", async () => {
+    const markStale = vi.fn(async () => ({ count: 2 }));
+    const fakePrisma = {
+      routeImportLog: { create: async () => undefined },
+      routeImportCheckpoint: { findUnique: async () => null, upsert: async () => undefined },
+      routeSourceRecord: { updateMany: markStale },
+    } as unknown as PrismaClient;
+    const complete: RouteImporter = {
+      source: "complete_fixture",
+      async *fetchRoutes() {
+        return { nextCursor: null, snapshotId: "snapshot-1", snapshotComplete: true };
+      },
+    };
+    const result = await syncSource(fakePrisma, complete, { maxRoutesPerSource: 10 });
+    expect(result).toMatchObject({ snapshotComplete: true, stale: 2, errors: [] });
+    expect(markStale).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ NOT: { importSnapshot: "snapshot-1" } }),
+    }));
   });
 });
