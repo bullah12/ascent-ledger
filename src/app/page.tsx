@@ -27,9 +27,9 @@ export default function Home() {
         <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Built for rock · winter · alpine · ski · mountain days</p>
       </section>
 
-      <section className="relative min-h-[46vh] overflow-hidden bg-[#1d3a2b] lg:min-h-screen">
-        <div className="absolute inset-0 bg-[url('/og.png')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#153224]/80 via-transparent to-transparent" />
+      <section className="relative min-h-[46vh] overflow-hidden bg-[#173529] lg:min-h-screen">
+        <div className="absolute inset-0 bg-[url('/og.png')] bg-contain bg-top bg-no-repeat" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#153224] via-[#153224]/10 via-45% to-transparent" />
         <div className="absolute inset-x-5 bottom-5 grid grid-cols-3 gap-2 sm:inset-x-8 sm:bottom-8 sm:gap-3">
           {[
             { icon: Mountain, label: "Log climbs" },
