@@ -131,6 +131,19 @@ async function ingestRoute(
     where: { source_externalId: { source: importer.source, externalId: route.externalId } },
     include: { route: true },
   });
+  // Routes imported before route_source_records was introduced still carry
+  // their source identity on the canonical row. Adopt that row instead of
+  // attempting to create a duplicate that violates the legacy compound key.
+  const legacyRoute = existingRecord
+    ? null
+    : await prisma.route.findUnique({
+        where: {
+          externalSource_externalId: {
+            externalSource: importer.source,
+            externalId: route.externalId,
+          },
+        },
+      });
   const areaId = route.area ? await findOrCreateArea(prisma, context.areaCache, route.area) : null;
   const values = canonicalValues(route, areaId);
   const precedence = importer.precedence ?? 100;
@@ -143,6 +156,12 @@ async function ingestRoute(
     await prisma.route.update({
       where: { id: canonicalId },
       data: precedenceUpdate(existingRecord.route.canonicalFieldMetaJson, values, precedence, importer.source),
+    });
+  } else if (legacyRoute) {
+    canonicalId = legacyRoute.id;
+    await prisma.route.update({
+      where: { id: canonicalId },
+      data: precedenceUpdate(legacyRoute.canonicalFieldMetaJson, values, precedence, importer.source),
     });
   } else {
     const candidates = await prisma.route.findMany({

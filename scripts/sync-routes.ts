@@ -107,6 +107,13 @@ async function main() {
       log: console.log,
     });
     console.table(results.map(({ errors, ...result }) => ({ ...result, errors: errors.length })));
+    for (const result of results) {
+      for (const error of result.errors) {
+        console.error(
+          `[${result.source}] ${error.code ?? "IMPORT_ERROR"}${error.route ? ` ${error.route}` : ""}: ${error.message}`
+        );
+      }
+    }
     if (results.every((result) => result.errors.length > 0)) process.exitCode = 1;
   } finally {
     await prisma.$disconnect();

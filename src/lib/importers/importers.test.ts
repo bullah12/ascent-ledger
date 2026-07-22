@@ -114,6 +114,7 @@ describe("Phase 9 route importers", () => {
       },
       routeMergeSuggestion: { upsert: async () => undefined },
       route: {
+        findUnique: async () => null,
         findMany: async () => [],
         update: async () => undefined,
         create: async (value: unknown) => {
@@ -161,6 +162,75 @@ describe("Phase 9 route importers", () => {
     expect(createdRoutes[0]).toMatchObject({
       data: { pathSource: "import", lat: 50, lng: -2 },
     });
+  });
+
+  it("adopts a legacy canonical route when its source record is missing", async () => {
+    const updateRoute = vi.fn(async () => undefined);
+    const upsertSourceRecord = vi.fn(async () => undefined);
+    const createRoute = vi.fn();
+    const legacyRoute = {
+      id: "legacy-route",
+      canonicalFieldMetaJson: null,
+    };
+    const fakePrisma = {
+      routeImportLog: { create: async () => undefined },
+      routeImportCheckpoint: {
+        findUnique: async () => null,
+        upsert: async () => undefined,
+      },
+      routeSourceRecord: {
+        findUnique: async () => null,
+        upsert: upsertSourceRecord,
+        updateMany: async () => ({ count: 0 }),
+      },
+      routeMergeSuggestion: { upsert: async () => undefined },
+      route: {
+        findUnique: vi.fn(async () => legacyRoute),
+        findMany: async () => [],
+        update: updateRoute,
+        create: createRoute,
+      },
+    } as unknown as PrismaClient;
+    const importer: RouteImporter = {
+      source: "osm_geofabrik",
+      async *fetchRoutes() {
+        yield {
+          externalId: "relation/3998335",
+          externalUrl: "https://www.openstreetmap.org/relation/3998335",
+          name: "Lawena - Wangerberg",
+          discipline: "hiking",
+          gradeSystem: null,
+          gradeRaw: null,
+          lat: 47.1,
+          lng: 9.5,
+          lengthM: null,
+          pitches: null,
+          description: null,
+          pathGeojson: null,
+          qualityRating: null,
+          area: null,
+        };
+      },
+    };
+
+    const result = await syncSource(fakePrisma, importer, { maxRoutesPerSource: 10 });
+
+    expect(result).toMatchObject({ added: 0, updated: 1, errors: [] });
+    expect(fakePrisma.route.findUnique).toHaveBeenCalledWith({
+      where: {
+        externalSource_externalId: {
+          externalSource: "osm_geofabrik",
+          externalId: "relation/3998335",
+        },
+      },
+    });
+    expect(updateRoute).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "legacy-route" },
+    }));
+    expect(upsertSourceRecord).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ routeId: "legacy-route" }),
+    }));
+    expect(createRoute).not.toHaveBeenCalled();
   });
 
   it("marks missing records stale only after a successful complete snapshot", async () => {
