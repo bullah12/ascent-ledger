@@ -28,6 +28,7 @@ export default async function EditClimbPage({
           area: { select: { name: true } },
         },
       },
+      customTrail: { select: { id: true, name: true, discipline: true, gradeRaw: true, areaName: true } },
     },
   });
 
@@ -56,12 +57,13 @@ export default async function EditClimbPage({
           climb.route
             ? {
                 id: climb.route.id,
+                kind: "canonical" as const,
                 name: climb.route.name,
                 discipline: climb.route.discipline,
                 gradeRaw: climb.route.gradeRaw,
                 areaName: climb.route.area?.name ?? null,
               }
-            : null
+            : climb.customTrail ? { id: climb.customTrail.id, kind: "custom" as const, name: climb.customTrail.name, discipline: climb.customTrail.discipline, gradeRaw: climb.customTrail.gradeRaw, areaName: climb.customTrail.areaName } : null
         }
         defaultValues={{
           routeName: climb.freeTextRouteName,

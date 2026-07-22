@@ -16,6 +16,7 @@ import { deleteOwnReview, toggleRouteTag, toggleSavedRoute } from "./community-a
 import { projectPublicTicks, safeDisplayName } from "@/lib/community/privacy";
 import { tagChipsFromCounts } from "@/lib/community/tags";
 import { lineStringOrNull } from "@/lib/tracks";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 
 function formatDuration(minutes: number | null) {
   if (!minutes) return "Not recorded";
@@ -27,11 +28,11 @@ function formatDuration(minutes: number | null) {
 export default async function RouteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireOnboardedUser();
-  const route = await prisma.route.findUnique({
-    where: { id },
+  const route = await prisma.route.findFirst({
+    where: { id, ...APPROVED_PUBLIC_ROUTE_WHERE },
     include: {
       area: { select: { name: true, region: true, country: true } },
-      sourceRecords: { where: { status: "active" }, orderBy: { source: "asc" } },
+      sourceRecords: { where: { status: "active", publicationState: { not: "rejected" } }, orderBy: { source: "asc" } },
     },
   });
   if (!route) notFound();
@@ -161,7 +162,6 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
           </section>
 
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" render={<Link href={`/routes/${route.id}/edit`} />}>Edit route details</Button>
             {(route.sourceRecords[0] || legacyAttribution) && <Button variant="ghost" render={<a href={route.sourceRecords[0]?.externalUrl ?? route.externalUrl ?? legacyAttribution!.sourceUrl} />}>View source record</Button>}
           </div>
 

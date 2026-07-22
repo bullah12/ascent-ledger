@@ -5,6 +5,7 @@ import { ClimbTable, type ClimbRow } from "./climb-table";
 import { LinkSuggestions, type SuggestionRow } from "./link-suggestions";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 
 export default async function LogbookPage() {
   const user = await requireOnboardedUser();
@@ -16,7 +17,7 @@ export default async function LogbookPage() {
       orderBy: { date: "desc" },
     }),
     prisma.climbRouteSuggestion.findMany({
-      where: { status: "pending", climb: { userId: user.id } },
+      where: { status: "pending", climb: { userId: user.id }, route: APPROVED_PUBLIC_ROUTE_WHERE },
       include: {
         climb: { select: { freeTextRouteName: true, date: true } },
         route: {

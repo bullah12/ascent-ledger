@@ -36,6 +36,7 @@ export default async function ClimbDetailPage({
     include: {
       area: { select: { name: true } },
       route: { select: { name: true, externalUrl: true } },
+      customTrail: { select: { id: true, name: true } },
     },
   });
   if (!climb) notFound();
@@ -116,6 +117,7 @@ export default async function ClimbDetailPage({
             }
           />
         )}
+        {climb.customTrail && <Fact label="Linked private trail" value={<Link href={`/my-trails/${climb.customTrail.id}`} className="underline">{climb.customTrail.name}</Link>} />}
         {(climb.gpxTrackUrl || climb.pathGeojson) && (
           <Fact
             label="Track"

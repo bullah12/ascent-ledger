@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -33,6 +34,7 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
   const sort = typeof query.sort === "string" ? query.sort : "rating";
 
   const where = {
+    ...APPROVED_PUBLIC_ROUTE_WHERE,
     ...(selectedRegions.length ? { area: { region: { in: selectedRegions } } } : {}),
     ...(selectedDisciplines.length ? { discipline: { in: selectedDisciplines } } : {}),
     ...(selectedGrades.length ? { gradeRaw: { in: selectedGrades } } : {}),
@@ -51,8 +53,8 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
       orderBy: sort === "distance" ? [{ lengthM: "asc" }, { name: "asc" }] : sort === "name" ? [{ name: "asc" }] : [{ avgRating: { sort: "desc", nulls: "last" } }, { reviewCount: "desc" }, { name: "asc" }],
       take: 500,
     }),
-    prisma.area.findMany({ where: { region: { not: null } }, distinct: ["region"], select: { region: true }, orderBy: { region: "asc" } }),
-    prisma.route.findMany({ where: { gradeRaw: { not: null } }, distinct: ["gradeRaw"], select: { gradeRaw: true }, orderBy: { gradeRaw: "asc" }, take: 16 }),
+    prisma.area.findMany({ where: { region: { not: null }, routes: { some: APPROVED_PUBLIC_ROUTE_WHERE } }, distinct: ["region"], select: { region: true }, orderBy: { region: "asc" } }),
+    prisma.route.findMany({ where: { ...APPROVED_PUBLIC_ROUTE_WHERE, gradeRaw: { not: null } }, distinct: ["gradeRaw"], select: { gradeRaw: true }, orderBy: { gradeRaw: "asc" }, take: 16 }),
   ]);
   const regions = areaRows.flatMap((area) => area.region ? [area.region] : []);
   const grades = gradeRows.flatMap((route) => route.gradeRaw ? [route.gradeRaw] : []);
@@ -60,7 +62,7 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
   return (
     <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 pb-10 sm:px-6 lg:px-8">
       <SiteNav current="/routes" />
-      <div className="mb-6 flex items-end justify-between gap-4 lg:hidden"><div><p className="instrument-label mb-2 text-primary">Route database</p><h1 className="page-title">Routes</h1></div><Button render={<Link href="/routes/new" />}><Plus /> Add</Button></div>
+      <div className="mb-6 flex items-end justify-between gap-4 lg:hidden"><div><p className="instrument-label mb-2 text-primary">Route database</p><h1 className="page-title">Routes</h1></div><Button render={<Link href="/my-trails/new" />}><Plus /> My trail</Button></div>
 
       <div className="overflow-hidden rounded-xl border bg-card lg:grid lg:min-h-[calc(100vh-120px)] lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="border-b bg-secondary/35 lg:border-r lg:border-b-0">
@@ -93,7 +95,7 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
                 <NativeSelect name="sort" defaultValue={sort} className="w-36"><option value="rating">Top rated</option><option value="distance">Distance</option><option value="name">Name</option></NativeSelect>
                 <Button type="submit" variant="outline" size="sm">Apply</Button>
               </form>
-              <Button className="hidden lg:inline-flex" render={<Link href="/routes/new" />}><Plus /> Add route</Button>
+              <Button className="hidden lg:inline-flex" render={<Link href="/my-trails/new" />}><Plus /> Add private trail</Button>
             </div>
           </header>
 

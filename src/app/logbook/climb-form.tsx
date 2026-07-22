@@ -103,6 +103,7 @@ export function ClimbForm({
   );
   const [routeName, setRouteName] = useState(defaultValues?.routeName ?? "");
   const [rating, setRating] = useState<number | null>(defaultValues?.rating ?? null);
+  const [linkedKind, setLinkedKind] = useState<LinkedRoute["kind"] | null>(linkedRoute?.kind ?? null);
 
   function handleDisciplineChange(next: Discipline) {
     setDiscipline(next);
@@ -112,6 +113,7 @@ export function ClimbForm({
   }
 
   function handleRouteSelect(route: LinkedRoute) {
+    setLinkedKind(route.kind);
     if (!routeName.trim()) setRouteName(route.name);
   }
 
@@ -120,7 +122,7 @@ export function ClimbForm({
       <div className="space-y-7 p-5 sm:p-7 lg:p-9">
         <section className="space-y-3">
           <p className="instrument-label">Route</p>
-          <RoutePicker initialRoute={linkedRoute} onSelect={handleRouteSelect} />
+          <RoutePicker initialRoute={linkedRoute} onSelect={handleRouteSelect} onClear={() => setLinkedKind(null)} />
           <FieldError message={errors.routeId} />
         </section>
 
@@ -239,10 +241,10 @@ export function ClimbForm({
               <FieldError message={errors.ascentM} />
             </div>
             <label className="flex items-start gap-3 rounded-lg border bg-background p-3 text-sm sm:col-span-2">
-              <input type="checkbox" name="visibility" value={ClimbVisibility.public} defaultChecked={defaultValues?.visibility === ClimbVisibility.public} className="mt-1 accent-primary" />
+              <input type="checkbox" name="visibility" value={ClimbVisibility.public} disabled={linkedKind === "custom"} defaultChecked={defaultValues?.visibility === ClimbVisibility.public} className="mt-1 accent-primary" />
               <span>
                 <span className="flex items-center gap-2 font-medium"><LockKeyhole className="size-4 text-primary" /> Show as a public tick</span>
-                <span className="mt-1 block text-muted-foreground">Only your display name, route, date, grade, and style are shared. Notes, partners, photos, and tracks stay private.</span>
+                <span className="mt-1 block text-muted-foreground">{linkedKind === "custom" ? "Custom-trail logs are always private." : "Only your display name, route, date, grade, and style are shared. Notes, partners, photos, and tracks stay private."}</span>
               </span>
             </label>
             <div className="sm:col-span-2">
@@ -295,9 +297,9 @@ export function ClimbForm({
             <Button type="submit" name="intent" value="save" size="lg" disabled={pending} className="h-11">
               {pending ? "Saving…" : submitLabel}
             </Button>
-            <Button type="submit" name="intent" value="publish-review" size="lg" variant="outline" disabled={pending} className="h-11">
+            {linkedKind !== "custom" && <Button type="submit" name="intent" value="publish-review" size="lg" variant="outline" disabled={pending} className="h-11">
               Save & publish review
-            </Button>
+            </Button>}
             <Button variant="ghost" render={<Link href="/logbook" />}>Cancel</Button>
           </div>
         </div>

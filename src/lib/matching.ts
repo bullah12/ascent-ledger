@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 
 // Fuzzy matching between free-text Climb entries and canonical Routes,
 // by name + area. Matches become ClimbRouteSuggestion rows the user
@@ -78,7 +79,7 @@ export async function generateLinkSuggestions(
 ): Promise<number> {
   const [climbs, routes, existing] = await Promise.all([
     prisma.climb.findMany({
-      where: { routeId: null },
+      where: { routeId: null, customTrailId: null },
       select: {
         id: true,
         discipline: true,
@@ -87,6 +88,7 @@ export async function generateLinkSuggestions(
       },
     }),
     prisma.route.findMany({
+      where: APPROVED_PUBLIC_ROUTE_WHERE,
       select: {
         id: true,
         discipline: true,

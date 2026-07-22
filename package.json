@@ -14,6 +14,7 @@
     "db:seed:tags": "tsx scripts/seed-tags.ts",
     "sync:routes": "tsx scripts/sync-routes.ts",
     "backfill:tracks": "tsx scripts/backfill-track-geometry.ts",
+    "routes:reclassify": "tsx scripts/reclassify-routes.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -64,7 +64,14 @@ async function main() {
           externalId: route.external_id,
         },
       },
-      update: { starterDisciplines: [route.discipline] },
+      update: {
+        starterDisciplines: [route.discipline], origin: "imported",
+        publicationState: "approved", verificationStatus: "verified",
+        verificationReason: `Manually verified starter seed ${seed.verified_at}`,
+        moderationReason: "Curated onboarding starter route", qualityScore: 100,
+        sourceAuthority: route.source, policyVersion: "route-quality-v1", moderatedAt: new Date(`${seed.verified_at}T00:00:00.000Z`),
+        moderationLocked: true,
+      },
       create: {
         name: route.name,
         discipline: route.discipline,
@@ -81,6 +88,16 @@ async function main() {
         externalUrl: sourceUrl(route),
         lastSyncedAt: new Date(`${seed.verified_at}T00:00:00.000Z`),
         starterDisciplines: [route.discipline],
+        origin: "imported",
+        publicationState: "approved",
+        verificationStatus: "verified",
+        verificationReason: `Manually verified starter seed ${seed.verified_at}`,
+        moderationReason: "Curated onboarding starter route",
+        qualityScore: 100,
+        sourceAuthority: route.source,
+        policyVersion: "route-quality-v1",
+        moderatedAt: new Date(`${seed.verified_at}T00:00:00.000Z`),
+        moderationLocked: true,
       },
     });
   }

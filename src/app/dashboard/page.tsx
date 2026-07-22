@@ -41,7 +41,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const [climbs, progressResult, recommendations] = await Promise.all([
     prisma.climb.findMany({
       where: { userId: user.id },
-      select: { id: true, date: true, lengthM: true, ascentM: true, rating: true, gradeRaw: true, freeTextRouteName: true, area: { select: { name: true } }, route: { select: { id: true, name: true, area: { select: { name: true } } } } },
+      select: { id: true, date: true, lengthM: true, ascentM: true, rating: true, gradeRaw: true, freeTextRouteName: true, area: { select: { name: true } }, route: { select: { id: true, name: true, area: { select: { name: true } } } }, customTrail: { select: { name: true, areaName: true } } },
       orderBy: { date: "desc" },
     }),
     getUserProgressAndSuggestions(prisma, user),
@@ -140,7 +140,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <Card>
             <CardHeader><CardTitle className="text-[17px] font-bold">Recent climbs</CardTitle></CardHeader>
             <CardContent className="divide-y">
-              {climbs.slice(0, 5).map((climb) => <Link key={climb.id} href={`/logbook/${climb.id}`} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0 hover:text-primary"><span className="min-w-0"><strong className="block truncate">{climb.route?.name ?? climb.freeTextRouteName}</strong><span className="block truncate font-mono text-[10px] text-muted-foreground">{[climb.route?.area?.name ?? climb.area?.name, climb.gradeRaw].filter(Boolean).join(" · ")}</span></span><span className="shrink-0 text-right"><span className="flex justify-end text-amber-600">{climb.rating ? Array.from({ length: climb.rating }, (_, index) => <Star key={index} className="size-3 fill-current" />) : <span className="text-xs text-muted-foreground">Unrated</span>}</span><span className="font-mono text-[10px] text-muted-foreground">{climb.date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span></span></Link>)}
+              {climbs.slice(0, 5).map((climb) => <Link key={climb.id} href={`/logbook/${climb.id}`} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0 hover:text-primary"><span className="min-w-0"><strong className="block truncate">{climb.route?.name ?? climb.customTrail?.name ?? climb.freeTextRouteName}</strong><span className="block truncate font-mono text-[10px] text-muted-foreground">{[climb.route?.area?.name ?? climb.customTrail?.areaName ?? climb.area?.name, climb.gradeRaw].filter(Boolean).join(" · ")}</span></span><span className="shrink-0 text-right"><span className="flex justify-end text-amber-600">{climb.rating ? Array.from({ length: climb.rating }, (_, index) => <Star key={index} className="size-3 fill-current" />) : <span className="text-xs text-muted-foreground">Unrated</span>}</span><span className="font-mono text-[10px] text-muted-foreground">{climb.date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span></span></Link>)}
               {!climbs.length && <p className="text-sm text-muted-foreground">Your recent climbs will appear here after your first log.</p>}
             </CardContent>
           </Card>

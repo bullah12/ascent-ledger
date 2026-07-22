@@ -28,6 +28,8 @@ import {
   type TrackPathSource,
 } from "@/lib/tracks";
 import { recomputeReviewAggregate } from "@/lib/community/reviews";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
+import { ownedCustomTrailWhere } from "@/lib/routes/custom-trails";
 
 export type ClimbFormState = {
   error?: string;
@@ -53,6 +55,7 @@ function parseForm(formData: FormData):
     area: formData.get("area") ?? undefined,
     notes: formData.get("notes") ?? undefined,
     routeId: formData.get("routeId") || undefined,
+    customTrailId: formData.get("customTrailId") || undefined,
     visibility:
       formData.get("visibility") === ClimbVisibility.public
         ? ClimbVisibility.public
@@ -76,6 +79,7 @@ function parseForm(formData: FormData):
 function toClimbData(input: ClimbInput, areaId: string | null) {
   return {
     routeId: input.routeId ?? null,
+    customTrailId: input.customTrailId ?? null,
     freeTextRouteName: input.routeName,
     discipline: input.discipline,
     date: new Date(input.date),
@@ -97,6 +101,16 @@ function toClimbData(input: ClimbInput, areaId: string | null) {
     notes: input.notes || null,
     visibility: input.visibility,
   };
+}
+
+async function linkIsAllowed(userId: string, input: Pick<ClimbInput, "routeId" | "customTrailId">) {
+  if (input.routeId) {
+    return Boolean(await prisma.route.findFirst({ where: { id: input.routeId, ...APPROVED_PUBLIC_ROUTE_WHERE }, select: { id: true } }));
+  }
+  if (input.customTrailId) {
+    return Boolean(await prisma.customTrail.findFirst({ where: ownedCustomTrailWhere(userId, input.customTrailId), select: { id: true } }));
+  }
+  return true;
 }
 
 type TrackSubmission = {
@@ -197,8 +211,12 @@ export async function createClimb(
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
   const publishReview = formData.get("intent") === "publish-review";
+  if (!(await linkIsAllowed(user.id, parsed.input))) return { error: "That route or trail is not available to your account." };
   if (publishReview && !parsed.input.routeId) {
     return { error: "Link this log to a route before publishing it as a review." };
+  }
+  if (parsed.input.customTrailId && parsed.input.visibility === ClimbVisibility.public) {
+    return { error: "Climbs linked to a custom trail must remain private." };
   }
   if (publishReview && !parsed.input.rating) {
     return { fieldErrors: { rating: "Choose a rating before publishing a review" } };
@@ -273,8 +291,12 @@ export async function updateClimb(
   const parsed = parseForm(formData);
   if (!parsed.ok) return parsed.state;
   const publishReview = formData.get("intent") === "publish-review";
+  if (!(await linkIsAllowed(user.id, parsed.input))) return { error: "That route or trail is not available to your account." };
   if (publishReview && (!parsed.input.routeId || !parsed.input.rating)) {
     return { error: "Link a route and choose a rating before publishing a review." };
+  }
+  if (parsed.input.customTrailId && parsed.input.visibility === ClimbVisibility.public) {
+    return { error: "Climbs linked to a custom trail must remain private." };
   }
   const submittedTrack = parseTrackSubmission(formData);
   if (!submittedTrack.ok) return { error: submittedTrack.error };
@@ -282,7 +304,7 @@ export async function updateClimb(
   // Ownership check up front — attachment handling needs the current row.
   const existing = await prisma.climb.findFirst({
     where: { id: climbId, userId: user.id },
-    select: { photoUrls: true, gpxTrackUrl: true, routeId: true },
+    select: { photoUrls: true, gpxTrackUrl: true, routeId: true, customTrailId: true },
   });
   if (!existing) {
     return { error: "This climb no longer exists." };
@@ -380,7 +402,7 @@ export async function resolveSuggestion(formData: FormData): Promise<void> {
   }
 
   const suggestion = await prisma.climbRouteSuggestion.findFirst({
-    where: { id: suggestionId, status: "pending", climb: { userId: user.id } },
+    where: { id: suggestionId, status: "pending", climb: { userId: user.id }, route: APPROVED_PUBLIC_ROUTE_WHERE },
   });
   if (!suggestion) return;
 

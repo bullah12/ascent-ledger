@@ -7,6 +7,7 @@ import {
 } from "@/lib/bmg/engine";
 import { gradeLabelForScore, gradeSystemsByDiscipline } from "@/lib/grades";
 import { normaliseText } from "@/lib/matching";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 import {
   haversineKm,
   proximityScore,
@@ -308,6 +309,7 @@ export async function getSuggestions(
 ): Promise<CategorySuggestions[]> {
   const [routes, climbs] = await Promise.all([
     prisma.route.findMany({
+      where: APPROVED_PUBLIC_ROUTE_WHERE,
       select: {
         id: true,
         name: true,

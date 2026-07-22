@@ -1,6 +1,6 @@
 import { Discipline, GradeSystem } from "@/generated/prisma/enums";
 import type { Position } from "geojson";
-import { assembleOrderedRelationGeometry, longestConnectedLine } from "./geometry";
+import { assembleOrderedRelationGeometry, geodesicLengthM, longestConnectedLine } from "./geometry";
 import { normaliseSacScale } from "./osm-sac";
 import type { ExternalRoute, ImporterOptions, RouteImporter } from "./types";
 
@@ -82,12 +82,18 @@ export function parseOverpassElement(element: OsmElement): ExternalRoute | null 
     lat: null,
     lng: null,
     lengthM: null,
+    calculatedLengthM: geodesicLengthM(pathGeojson),
     pitches: null,
     description: tags.description?.trim() || null,
     pathGeojson,
     geometrySegments: assembled?.segments,
     geometryCompleteness: assembled?.completeness ?? "complete",
     qualityRating: null,
+    officialRef: tags.ref ?? null,
+    network: tags.network ?? null,
+    operator: tags.operator ?? null,
+    wikidata: tags.wikidata ?? null,
+    website: tags.website ?? null,
     licence: "ODbL 1.0",
     licenceUrl: "https://opendatacommons.org/licenses/odbl/1-0/",
     attribution: "© OpenStreetMap contributors",

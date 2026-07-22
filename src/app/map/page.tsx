@@ -16,6 +16,7 @@ import {
   sourceAttribution,
 } from "@/lib/importers/source-attribution";
 import { getForYouSuggestions } from "@/lib/suggestions";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 
 export default async function MapPage() {
   const user = await requireOnboardedUser();
@@ -25,6 +26,7 @@ export default async function MapPage() {
     totalClimbs,
     { categorySuggestions },
     routesWithPaths,
+    customTrailsWithPaths,
     forYouSuggestions,
   ] = await Promise.all([
     prisma.climb.findMany({
@@ -46,13 +48,14 @@ export default async function MapPage() {
             area: { select: { name: true } },
           },
         },
+        customTrail: { select: { name: true, lat: true, lng: true, areaName: true } },
       },
       orderBy: { date: "desc" },
     }),
     prisma.climb.count({ where: { userId: user.id } }),
     getUserProgressAndSuggestions(prisma, user),
     prisma.route.findMany({
-      where: { pathSource: { not: null } },
+      where: { ...APPROVED_PUBLIC_ROUTE_WHERE, pathSource: { not: null } },
       select: {
         id: true,
         name: true,
@@ -60,12 +63,17 @@ export default async function MapPage() {
         pathSource: true,
         externalSource: true,
         sourceRecords: {
-          where: { status: "active" },
+          where: { status: "active", publicationState: { not: "rejected" } },
           select: { source: true, externalUrl: true, attribution: true, licence: true, licenceUrl: true },
         },
       },
       orderBy: { updatedAt: "desc" },
       take: 500,
+    }),
+    prisma.customTrail.findMany({
+      where: { ownerId: user.id, pathSource: { not: null } },
+      select: { id: true, name: true, pathGeojson: true, pathSource: true },
+      orderBy: { updatedAt: "desc" }, take: 500,
     }),
     getForYouSuggestions(prisma, user.id),
   ]);
@@ -77,16 +85,18 @@ export default async function MapPage() {
       : climb.route?.lat !== null && climb.route?.lat !== undefined &&
           climb.route.lng !== null && climb.route.lng !== undefined
         ? { lat: climb.route.lat, lng: climb.route.lng }
+        : climb.customTrail?.lat !== null && climb.customTrail?.lat !== undefined && climb.customTrail.lng !== null && climb.customTrail.lng !== undefined
+          ? { lat: climb.customTrail.lat, lng: climb.customTrail.lng }
         : null;
     if (!point) return [];
     return [{
       lat: point.lat,
       lng: point.lng,
-      name: climb.route?.name || climb.freeTextRouteName,
+      name: climb.route?.name ?? climb.customTrail?.name ?? climb.freeTextRouteName,
       gradeRaw: climb.gradeRaw,
       date: climb.date.toISOString().slice(0, 10),
       discipline: disciplineLabels[climb.discipline],
-      areaName: climb.route?.area?.name ?? climb.area?.name ?? null,
+      areaName: climb.route?.area?.name ?? climb.customTrail?.areaName ?? climb.area?.name ?? null,
     }];
   });
 
@@ -113,6 +123,11 @@ export default async function MapPage() {
       source: route.pathSource?.replaceAll("_", " ") ?? null,
       attribution: route.sourceRecords.map((record) => record.attribution).join(" · ") || sourceAttribution(route.externalSource)?.attribution || null,
     });
+  }
+  for (const trail of customTrailsWithPaths) {
+    const geometry = lineStringOrNull(trail.pathGeojson);
+    if (!geometry) continue;
+    paths.push({ id: `custom-${trail.id}`, geometry, name: trail.name, kind: "climb", source: "private custom trail" });
   }
   const routeAttributions = [...new Map(routesWithPaths.flatMap((route) =>
     route.sourceRecords.map((record) => [`${record.source}:${record.licence}`, {

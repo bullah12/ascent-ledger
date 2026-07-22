@@ -45,12 +45,14 @@ export function RouteForm({
   initialPath = null,
   initialPathSource = null,
   submitLabel = "Add route",
+  cancelHref = "/my-trails",
 }: {
   action: (prev: RouteFormState, formData: FormData) => Promise<RouteFormState>;
   defaultValues?: RouteFormValues;
   initialPath?: LineString | null;
   initialPathSource?: TrackPathSource | null;
   submitLabel?: string;
+  cancelHref?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const errors = state.fieldErrors ?? {};
@@ -234,7 +236,7 @@ export function RouteForm({
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : submitLabel}
         </Button>
-        <Button variant="ghost" render={<Link href="/routes" />}>
+        <Button variant="ghost" render={<Link href={cancelHref} />}>
           Cancel
         </Button>
       </div>

@@ -9,6 +9,7 @@ import { createNatureScotGreatTrailsImporter } from "./scotlands-great-trails";
 import { sourceAttribution } from "./source-attribution";
 import { syncSource } from "./sync";
 import type { RouteImporter } from "./types";
+import { routeInputFingerprint, ROUTE_QUALITY_POLICY_VERSION } from "@/lib/routes/quality-policy";
 
 const jsonResponse = (payload: unknown, status = 200) =>
   new Response(JSON.stringify(payload), {
@@ -140,6 +141,7 @@ describe("Phase 9 route importers", () => {
           lat: 50,
           lng: -2,
           lengthM: null,
+          calculatedLengthM: 12_000,
           pitches: null,
           description: null,
           pathGeojson: {
@@ -204,9 +206,15 @@ describe("Phase 9 route importers", () => {
           lat: 47.1,
           lng: 9.5,
           lengthM: null,
+          calculatedLengthM: 12_000,
           pitches: null,
           description: null,
-          pathGeojson: null,
+          pathGeojson: { type: "LineString", coordinates: [[9.5, 47.1], [9.6, 47.2]] },
+          geometryCompleteness: "complete",
+          officialRef: "LWW-1",
+          network: "rwn",
+          operator: "Liechtenstein trail authority",
+          rawMetadata: { tags: { type: "route", route: "hiking", network: "rwn", ref: "LWW-1", operator: "Liechtenstein trail authority" } },
           qualityRating: null,
           area: null,
         };
@@ -251,5 +259,64 @@ describe("Phase 9 route importers", () => {
     expect(markStale).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ NOT: { importSnapshot: "snapshot-1" } }),
     }));
+  });
+
+  it("counts and retains a rejected OSM standalone way without creating a canonical route", async () => {
+    const upsertSourceRecord = vi.fn(async () => undefined);
+    const createRoute = vi.fn();
+    const fakePrisma = {
+      routeImportLog: { create: async () => undefined },
+      routeImportCheckpoint: { findUnique: async () => null, upsert: async () => undefined },
+      routeSourceRecord: { findUnique: async () => null, upsert: upsertSourceRecord, updateMany: async () => ({ count: 0 }) },
+      route: { findUnique: async () => null, create: createRoute, update: vi.fn() },
+    } as unknown as PrismaClient;
+    const importer: RouteImporter = {
+      source: "osm_geofabrik",
+      async *fetchRoutes() {
+        yield {
+          externalId: "way/99", externalUrl: "https://www.openstreetmap.org/way/99",
+          name: "Someone's morning walk", discipline: "hiking", gradeSystem: null,
+          gradeRaw: null, lat: null, lng: null, lengthM: null, calculatedLengthM: 4_000,
+          pitches: null, description: null, qualityRating: null,
+          pathGeojson: { type: "LineString", coordinates: [[0, 0], [0.04, 0.04]] },
+          geometryCompleteness: "complete", rawMetadata: { tags: { highway: "path" } }, area: null,
+        };
+      },
+    };
+    const result = await syncSource(fakePrisma, importer, { maxRoutesPerSource: 10 });
+    expect(result).toMatchObject({ accepted: 0, quarantined: 0, rejected: 1, added: 0, errors: [] });
+    expect(createRoute).not.toHaveBeenCalled();
+    expect(upsertSourceRecord).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ routeId: null, publicationState: "rejected", decisionReasons: ["OSM_STANDALONE_WAY"] }),
+    }));
+  });
+
+  it("resumes past an unchanged rejected source record without reconsidering or duplicating it", async () => {
+    const candidate = {
+      externalId: "way/100", externalUrl: "https://www.openstreetmap.org/way/100",
+      name: "Unverified path", discipline: "hiking" as const, gradeSystem: null,
+      gradeRaw: null, lat: null, lng: null, lengthM: null, calculatedLengthM: 4_000,
+      pitches: null, description: null, qualityRating: null,
+      pathGeojson: { type: "LineString" as const, coordinates: [[0, 0], [0.04, 0.04]] },
+      geometryCompleteness: "complete" as const, rawMetadata: { tags: { highway: "path" } }, area: null,
+    };
+    const refresh = vi.fn(async () => undefined);
+    const findLegacy = vi.fn();
+    const upsert = vi.fn();
+    const fakePrisma = {
+      routeImportLog: { create: async () => undefined },
+      routeImportCheckpoint: { findUnique: async () => null, upsert: async () => undefined },
+      routeSourceRecord: {
+        findUnique: async () => ({ id: "source-100", routeId: null, route: null, publicationState: "rejected", policyVersion: ROUTE_QUALITY_POLICY_VERSION, inputFingerprint: routeInputFingerprint("osm_geofabrik", candidate) }),
+        update: refresh, upsert, updateMany: async () => ({ count: 0 }),
+      },
+      route: { findUnique: findLegacy },
+    } as unknown as PrismaClient;
+    const importer: RouteImporter = { source: "osm_geofabrik", async *fetchRoutes() { yield candidate; } };
+    const result = await syncSource(fakePrisma, importer, { maxRoutesPerSource: 10 });
+    expect(result).toMatchObject({ rejected: 1, added: 0, updated: 0, errors: [] });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(findLegacy).not.toHaveBeenCalled();
+    expect(upsert).not.toHaveBeenCalled();
   });
 });

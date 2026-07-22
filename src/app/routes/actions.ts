@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { resolveAreaId } from "@/lib/areas";
 import { normaliseGrade } from "@/lib/grades";
 import { routeInputSchema, type RouteInput } from "@/lib/routes/validation";
 import { Prisma } from "@/generated/prisma/client";
@@ -19,6 +18,7 @@ import {
   type TrackPathSource,
 } from "@/lib/tracks";
 import { MAX_TRACK_BYTES } from "@/lib/storage";
+import { ownedCustomTrailWhere } from "@/lib/routes/custom-trails";
 
 export type RouteFormState = {
   error?: string;
@@ -95,7 +95,6 @@ async function parseRouteTrack(formData: FormData): Promise<
 
 function routeData(
   input: RouteInput,
-  areaId: string | null,
   geometry: LineString | null,
   source: TrackPathSource | null
 ) {
@@ -108,7 +107,7 @@ function routeData(
     gradeNormalisedScore: input.gradeRaw
       ? normaliseGrade(input.gradeSystem, input.gradeRaw)
       : null,
-    areaId,
+    areaName: input.area || null,
     lat: start?.lat ?? input.lat ?? null,
     lng: start?.lng ?? input.lng ?? null,
     pathGeojson: (geometry as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
@@ -120,78 +119,69 @@ function routeData(
   };
 }
 
-const MANUAL_ROUTE_FIELDS = [
-  "name", "discipline", "gradeSystem", "gradeRaw", "gradeNormalisedScore", "areaId",
-  "lat", "lng", "pathGeojson", "pathSource", "lengthM", "ascentM",
-  "estimatedDurationMins", "description",
-] as const;
-
-function userEditedFieldMeta(existing: unknown = null) {
-  const meta = existing && typeof existing === "object"
-    ? { ...(existing as Record<string, unknown>) }
-    : {};
-  const editedAt = new Date().toISOString();
-  for (const field of MANUAL_ROUTE_FIELDS) meta[field] = { source: "user", precedence: 1000, userEdited: true, editedAt };
-  return meta as Prisma.InputJsonValue;
-}
-
-export async function createRoute(
+export async function createCustomTrail(
   _prev: RouteFormState,
   formData: FormData
 ): Promise<RouteFormState> {
-  await requireUser();
+  const user = await requireUser();
 
   const parsed = parseRouteForm(formData);
   if (!parsed.ok) return parsed.state;
   const track = await parseRouteTrack(formData);
   if (!track.ok) return { error: track.error };
 
+  let trailId: string;
   try {
-    const areaId = await resolveAreaId(parsed.input.area);
-    await prisma.route.create({
+    const trail = await prisma.customTrail.create({
       data: {
-        ...routeData(parsed.input, areaId, track.geometry, track.source),
-        externalSource: "manual",
-        canonicalFieldMetaJson: userEditedFieldMeta(),
+        ownerId: user.id,
+        ...routeData(parsed.input, track.geometry, track.source),
       },
     });
+    trailId = trail.id;
   } catch {
-    return { error: "Could not save the route. Please try again." };
+    return { error: "Could not save your trail. Please try again." };
   }
-
-  revalidatePath("/routes");
-  revalidatePath("/map");
-  redirect("/routes");
+  revalidatePath("/my-trails");
+  redirect(`/my-trails/${trailId}`);
 }
 
-export async function updateRoute(
-  routeId: string,
+export async function updateCustomTrail(
+  trailId: string,
   _prev: RouteFormState,
   formData: FormData
 ): Promise<RouteFormState> {
-  await requireUser();
+  const user = await requireUser();
   const parsed = parseRouteForm(formData);
   if (!parsed.ok) return parsed.state;
   const track = await parseRouteTrack(formData);
   if (!track.ok) return { error: track.error };
 
-  const existing = await prisma.route.findUnique({ where: { id: routeId }, select: { id: true, canonicalFieldMetaJson: true } });
-  if (!existing) return { error: "This route no longer exists." };
+  const existing = await prisma.customTrail.findFirst({ where: ownedCustomTrailWhere(user.id, trailId), select: { id: true } });
+  if (!existing) return { error: "This trail no longer exists." };
 
   try {
-    const areaId = await resolveAreaId(parsed.input.area);
-    await prisma.route.update({
-      where: { id: routeId },
-      data: {
-        ...routeData(parsed.input, areaId, track.geometry, track.source),
-        canonicalFieldMetaJson: userEditedFieldMeta(existing.canonicalFieldMetaJson),
-      },
+    await prisma.customTrail.update({
+      where: { id: trailId },
+      data: routeData(parsed.input, track.geometry, track.source),
     });
   } catch {
-    return { error: "Could not save the route. Please try again." };
+    return { error: "Could not save your trail. Please try again." };
   }
 
-  revalidatePath("/routes");
+  revalidatePath("/my-trails");
+  revalidatePath(`/my-trails/${trailId}`);
   revalidatePath("/map");
-  redirect("/routes");
+  redirect(`/my-trails/${trailId}`);
+}
+
+export async function deleteCustomTrail(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const trailId = formData.get("trailId");
+  if (typeof trailId !== "string") return;
+  await prisma.customTrail.deleteMany({ where: ownedCustomTrailWhere(user.id, trailId) });
+  revalidatePath("/my-trails");
+  revalidatePath("/logbook");
+  revalidatePath("/map");
+  redirect("/my-trails");
 }

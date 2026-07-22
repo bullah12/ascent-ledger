@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 
 export type LinkedRoute = {
   id: string;
+  kind: "canonical" | "custom";
   name: string;
   discipline: Discipline;
   gradeRaw: string | null;
@@ -24,16 +25,18 @@ function routeLabel(route: LinkedRoute): string {
 }
 
 /**
- * Optional "link this climb to a Route" step: search-by-name against the
- * Route table. Renders a hidden routeId input for the form action; climbs
- * can stay unlinked (free-text only).
+ * Optional link step over approved canonical routes plus the signed-in
+ * owner's custom trails. Separate hidden IDs prevent the two namespaces from
+ * being confused; climbs can also stay unlinked (free-text only).
  */
 export function RoutePicker({
   initialRoute,
   onSelect,
+  onClear,
 }: {
   initialRoute?: LinkedRoute | null;
   onSelect?: (route: LinkedRoute) => void;
+  onClear?: () => void;
 }) {
   const [selected, setSelected] = useState<LinkedRoute | null>(
     initialRoute ?? null
@@ -83,13 +86,14 @@ export function RoutePicker({
 
   return (
     <div className="grid gap-2">
-      <input type="hidden" name="routeId" value={selected?.id ?? ""} />
+      <input type="hidden" name="routeId" value={selected?.kind === "canonical" ? selected.id : ""} />
+      <input type="hidden" name="customTrailId" value={selected?.kind === "custom" ? selected.id : ""} />
 
       {selected ? (
         <div className="flex items-center gap-4 rounded-xl border bg-background p-3 text-sm">
           <span aria-hidden className="topographic-placeholder size-12 shrink-0 rounded-lg" />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-base font-bold">{selected.name}</span>
+            <span className="block truncate text-base font-bold">{selected.name}{selected.kind === "custom" ? " · My trail" : ""}</span>
             <span className="block truncate font-mono text-[11px] text-muted-foreground">
               {[selected.areaName, selected.gradeRaw, disciplineLabels[selected.discipline]].filter(Boolean).join(" · ")}
             </span>
@@ -99,7 +103,7 @@ export function RoutePicker({
             variant="ghost"
             size="icon"
             aria-label="Change linked route"
-            onClick={() => setSelected(null)}
+            onClick={() => { setSelected(null); onClear?.(); }}
           >
             <X className="size-4" />
             <span className="sr-only">Change</span>

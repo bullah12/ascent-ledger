@@ -2,6 +2,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import type { Discipline, GradeSystem } from "@/generated/prisma/enums";
 import { gradeLabelForScore } from "@/lib/grades";
 import { normaliseText } from "@/lib/matching";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 import {
   clamp01,
   haversineKm,
@@ -479,6 +480,7 @@ export async function getForYouSuggestions(
       },
     }),
     prisma.route.findMany({
+      where: APPROVED_PUBLIC_ROUTE_WHERE,
       select: {
         id: true,
         name: true,

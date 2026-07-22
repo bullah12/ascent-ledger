@@ -66,6 +66,39 @@ enum SourceRecordStatus {
   @@schema("ascent_ledger")
 }
 
+enum RouteOrigin {
+  imported
+  legacy_user_created
+
+  @@schema("ascent_ledger")
+}
+
+enum RoutePublicationState {
+  approved
+  quarantined
+  rejected
+  pending_review
+
+  @@schema("ascent_ledger")
+}
+
+enum RouteVerificationStatus {
+  verified
+  unverified
+  failed
+
+  @@schema("ascent_ledger")
+}
+
+enum ModerationAction {
+  classified
+  approved
+  quarantined
+  rejected
+
+  @@schema("ascent_ledger")
+}
+
 enum MergeSuggestionStatus {
   pending
   accepted
@@ -138,11 +171,13 @@ model User {
   recommenderWeightsJson Json?    @map("recommender_weights_json")
   createdAt              DateTime @default(now()) @map("created_at")
 
-  climbs      Climb[]
-  preference  UserPreference?
-  reviews     RouteReview[]
-  routeTags   RouteTag[]
-  savedRoutes SavedRoute[]
+  climbs           Climb[]
+  preference       UserPreference?
+  reviews          RouteReview[]
+  routeTags        RouteTag[]
+  savedRoutes      SavedRoute[]
+  customTrails     CustomTrail[]
+  moderationEvents RouteModerationEvent[] @relation("ModerationActor")
 
   @@map("users")
   @@schema("ascent_ledger")
@@ -227,46 +262,57 @@ model BmgRule {
 // Canonical route entry (manually added in Phase 3; external importers
 // populate the attribution fields from Phase 4).
 model Route {
-  id                     String               @id @default(uuid()) @db.Uuid
+  id                     String                  @id @default(uuid()) @db.Uuid
   name                   String
-  areaId                 String?              @map("area_id") @db.Uuid
-  area                   Area?                @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  areaId                 String?                 @map("area_id") @db.Uuid
+  area                   Area?                   @relation(fields: [areaId], references: [id], onDelete: SetNull)
   discipline             Discipline
-  gradeSystem            GradeSystem?         @map("grade_system")
-  gradeRaw               String?              @map("grade_raw")
-  gradeNormalisedScore   Int?                 @map("grade_normalised_score")
+  gradeSystem            GradeSystem?            @map("grade_system")
+  gradeRaw               String?                 @map("grade_raw")
+  gradeNormalisedScore   Int?                    @map("grade_normalised_score")
   lat                    Float?
   lng                    Float?
-  pathGeojson            Json?                @map("path_geojson")
-  pathSource             PathSource?          @map("path_source")
-  lengthM                Int?                 @map("length_m")
-  ascentM                Int?                 @map("ascent_m")
-  descentM               Int?                 @map("descent_m")
-  calculatedLengthM      Int?                 @map("calculated_length_m")
-  calculatedAscentM      Int?                 @map("calculated_ascent_m")
-  estimatedDurationMins  Int?                 @map("estimated_duration_mins")
-  calculatedDurationMins Int?                 @map("calculated_duration_mins")
-  routeShape             RouteShape           @default(unknown) @map("route_shape")
-  routeStatus            String?              @map("route_status")
-  geometryCompleteness   GeometryCompleteness @default(unknown) @map("geometry_completeness")
-  geometrySegmentsJson   Json?                @map("geometry_segments_json")
-  localizedNamesJson     Json?                @map("localized_names_json")
-  officialRef            String?              @map("official_ref")
+  pathGeojson            Json?                   @map("path_geojson")
+  pathSource             PathSource?             @map("path_source")
+  lengthM                Int?                    @map("length_m")
+  ascentM                Int?                    @map("ascent_m")
+  descentM               Int?                    @map("descent_m")
+  calculatedLengthM      Int?                    @map("calculated_length_m")
+  calculatedAscentM      Int?                    @map("calculated_ascent_m")
+  estimatedDurationMins  Int?                    @map("estimated_duration_mins")
+  calculatedDurationMins Int?                    @map("calculated_duration_mins")
+  routeShape             RouteShape              @default(unknown) @map("route_shape")
+  routeStatus            String?                 @map("route_status")
+  geometryCompleteness   GeometryCompleteness    @default(unknown) @map("geometry_completeness")
+  geometrySegmentsJson   Json?                   @map("geometry_segments_json")
+  localizedNamesJson     Json?                   @map("localized_names_json")
+  officialRef            String?                 @map("official_ref")
   network                String?
   operator               String?
-  canonicalFieldMetaJson Json?                @map("canonical_field_meta_json")
+  canonicalFieldMetaJson Json?                   @map("canonical_field_meta_json")
   pitches                Int?
   description            String?
-  qualityRating          Int?                 @map("quality_rating")
-  externalSource         String?              @map("external_source")
-  externalUrl            String?              @map("external_url")
-  externalId             String?              @map("external_id")
-  lastSyncedAt           DateTime?            @map("last_synced_at")
-  starterDisciplines     Discipline[]         @default([]) @map("starter_disciplines")
-  createdAt              DateTime             @default(now()) @map("created_at")
-  updatedAt              DateTime             @updatedAt @map("updated_at")
-  reviewCount            Int                  @default(0) @map("review_count")
-  avgRating              Float?               @map("avg_rating")
+  qualityRating          Int?                    @map("quality_rating")
+  externalSource         String?                 @map("external_source")
+  externalUrl            String?                 @map("external_url")
+  externalId             String?                 @map("external_id")
+  lastSyncedAt           DateTime?               @map("last_synced_at")
+  starterDisciplines     Discipline[]            @default([]) @map("starter_disciplines")
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  reviewCount            Int                     @default(0) @map("review_count")
+  avgRating              Float?                  @map("avg_rating")
+  origin                 RouteOrigin             @default(imported)
+  publicationState       RoutePublicationState   @default(pending_review) @map("publication_state")
+  verificationStatus     RouteVerificationStatus @default(unverified) @map("verification_status")
+  verificationReason     String?                 @map("verification_reason")
+  qualityScore           Int                     @default(0) @map("quality_score")
+  qualitySignalsJson     Json?                   @map("quality_signals_json")
+  moderationReason       String?                 @map("moderation_reason")
+  sourceAuthority        String?                 @map("source_authority")
+  policyVersion          String?                 @map("policy_version")
+  moderatedAt            DateTime?               @map("moderated_at")
+  moderationLocked       Boolean                 @default(false) @map("moderation_locked")
 
   climbs                    Climb[]
   suggestions               ClimbRouteSuggestion[]
@@ -276,9 +322,11 @@ model Route {
   sourceRecords             RouteSourceRecord[]
   mergeSuggestionsPrimary   RouteMergeSuggestion[] @relation("MergeSuggestionPrimary")
   mergeSuggestionsCandidate RouteMergeSuggestion[] @relation("MergeSuggestionCandidate")
+  moderationEvents          RouteModerationEvent[]
 
   @@unique([externalSource, externalId])
   @@index([name])
+  @@index([publicationState, origin])
   @@map("routes")
   @@schema("ascent_ledger")
 }
@@ -286,42 +334,102 @@ model Route {
 // Auditable source-specific representation linked to one canonical route.
 // The legacy Route.external* columns remain during the compatibility window.
 model RouteSourceRecord {
-  id                   String               @id @default(uuid()) @db.Uuid
-  routeId              String               @map("route_id") @db.Uuid
-  route                Route                @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  id                   String                  @id @default(uuid()) @db.Uuid
+  routeId              String?                 @map("route_id") @db.Uuid
+  route                Route?                  @relation(fields: [routeId], references: [id], onDelete: SetNull)
   source               String
-  sourceShard          String               @default("default") @map("source_shard")
-  sourceActivity       String               @default("all") @map("source_activity")
-  externalId           String               @map("external_id")
-  externalUrl          String               @map("external_url")
+  sourceShard          String                  @default("default") @map("source_shard")
+  sourceActivity       String                  @default("all") @map("source_activity")
+  externalId           String                  @map("external_id")
+  externalUrl          String                  @map("external_url")
   licence              String
-  licenceUrl           String?              @map("licence_url")
+  licenceUrl           String?                 @map("licence_url")
   attribution          String
-  rawMetadataJson      Json?                @map("raw_metadata_json")
-  fieldProvenanceJson  Json?                @map("field_provenance_json")
-  sourceUpdatedAt      DateTime?            @map("source_updated_at")
-  firstSeenAt          DateTime             @default(now()) @map("first_seen_at")
-  lastSeenAt           DateTime             @default(now()) @map("last_seen_at")
-  importSnapshot       String?              @map("import_snapshot")
-  importCheckpoint     String?              @map("import_checkpoint")
-  geometryGeojson      Json?                @map("geometry_geojson")
-  geometryCompleteness GeometryCompleteness @default(unknown) @map("geometry_completeness")
-  geometrySegmentsJson Json?                @map("geometry_segments_json")
-  sourceName           String               @map("source_name")
-  sourceGradeRaw       String?              @map("source_grade_raw")
-  sourceDistanceM      Int?                 @map("source_distance_m")
-  sourceAscentM        Int?                 @map("source_ascent_m")
-  sourceDescentM       Int?                 @map("source_descent_m")
-  status               SourceRecordStatus   @default(active)
-  staleAt              DateTime?            @map("stale_at")
-  createdAt            DateTime             @default(now()) @map("created_at")
-  updatedAt            DateTime             @updatedAt @map("updated_at")
+  rawMetadataJson      Json?                   @map("raw_metadata_json")
+  fieldProvenanceJson  Json?                   @map("field_provenance_json")
+  sourceUpdatedAt      DateTime?               @map("source_updated_at")
+  firstSeenAt          DateTime                @default(now()) @map("first_seen_at")
+  lastSeenAt           DateTime                @default(now()) @map("last_seen_at")
+  importSnapshot       String?                 @map("import_snapshot")
+  importCheckpoint     String?                 @map("import_checkpoint")
+  geometryGeojson      Json?                   @map("geometry_geojson")
+  geometryCompleteness GeometryCompleteness    @default(unknown) @map("geometry_completeness")
+  geometrySegmentsJson Json?                   @map("geometry_segments_json")
+  sourceName           String                  @map("source_name")
+  sourceGradeRaw       String?                 @map("source_grade_raw")
+  sourceDistanceM      Int?                    @map("source_distance_m")
+  sourceAscentM        Int?                    @map("source_ascent_m")
+  sourceDescentM       Int?                    @map("source_descent_m")
+  status               SourceRecordStatus      @default(active)
+  staleAt              DateTime?               @map("stale_at")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  publicationState     RoutePublicationState   @default(pending_review) @map("publication_state")
+  verificationStatus   RouteVerificationStatus @default(unverified) @map("verification_status")
+  decisionReasons      String[]                @default([]) @map("decision_reasons")
+  qualityScore         Int                     @default(0) @map("quality_score")
+  qualitySignalsJson   Json?                   @map("quality_signals_json")
+  sourceAuthority      String?                 @map("source_authority")
+  policyVersion        String?                 @map("policy_version")
+  inputFingerprint     String?                 @map("input_fingerprint")
+  evaluatedAt          DateTime?               @map("evaluated_at")
 
   @@unique([source, externalId])
   @@index([routeId, status])
   @@index([source, status])
   @@index([source, sourceShard, sourceActivity, status])
+  @@index([publicationState, source])
   @@map("route_source_records")
+  @@schema("ascent_ledger")
+}
+
+model RouteModerationEvent {
+  id            String                 @id @default(uuid()) @db.Uuid
+  routeId       String                 @map("route_id") @db.Uuid
+  route         Route                  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  actorUserId   String?                @map("actor_user_id") @db.Uuid
+  actor         User?                  @relation("ModerationActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action        ModerationAction
+  fromState     RoutePublicationState? @map("from_state")
+  toState       RoutePublicationState  @map("to_state")
+  reason        String
+  policyVersion String?                @map("policy_version")
+  qualityScore  Int?                   @map("quality_score")
+  signalsJson   Json?                  @map("signals_json")
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  @@index([routeId, createdAt])
+  @@index([toState, createdAt])
+  @@map("route_moderation_events")
+  @@schema("ascent_ledger")
+}
+
+model CustomTrail {
+  id                    String       @id @default(uuid()) @db.Uuid
+  ownerId               String       @map("owner_id") @db.Uuid
+  owner                 User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name                  String
+  discipline            Discipline
+  gradeSystem           GradeSystem? @map("grade_system")
+  gradeRaw              String?      @map("grade_raw")
+  gradeNormalisedScore  Int?         @map("grade_normalised_score")
+  areaName              String?      @map("area_name")
+  lat                   Float?
+  lng                   Float?
+  pathGeojson           Json?        @map("path_geojson")
+  pathSource            PathSource?  @map("path_source")
+  lengthM               Int?         @map("length_m")
+  ascentM               Int?         @map("ascent_m")
+  estimatedDurationMins Int?         @map("estimated_duration_mins")
+  description           String?
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  climbs Climb[]
+
+  @@index([ownerId, updatedAt])
+  @@index([ownerId, name])
+  @@map("custom_trails")
   @@schema("ascent_ledger")
 }
 
@@ -443,6 +551,9 @@ model RouteImportLog {
   routesMerged       Int             @default(0) @map("routes_merged")
   suggestionsCreated Int             @default(0) @map("suggestions_created")
   routesStale        Int             @default(0) @map("routes_stale")
+  routesAccepted     Int             @default(0) @map("routes_accepted")
+  routesQuarantined  Int             @default(0) @map("routes_quarantined")
+  routesRejected     Int             @default(0) @map("routes_rejected")
   shard              String          @default("default")
   activity           String          @default("all")
   snapshotId         String?         @map("snapshot_id")
@@ -484,6 +595,8 @@ model Climb {
   // display fallback for unlinked climbs.
   routeId              String?         @map("route_id") @db.Uuid
   route                Route?          @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  customTrailId        String?         @map("custom_trail_id") @db.Uuid
+  customTrail          CustomTrail?    @relation(fields: [customTrailId], references: [id], onDelete: SetNull)
   freeTextRouteName    String          @map("free_text_route_name")
   discipline           Discipline
   date                 DateTime        @db.Date
@@ -514,6 +627,7 @@ model Climb {
   suggestions ClimbRouteSuggestion[]
 
   @@index([userId, date])
+  @@index([customTrailId])
   @@map("climbs")
   @@schema("ascent_ledger")
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 import {
   mutateReviewAndRecompute,
   reviewInputSchema,
@@ -25,7 +26,7 @@ export async function saveReview(
     conditions: formData.getAll("conditions"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const route = await prisma.route.findUnique({ where: { id: routeId }, select: { id: true } });
+  const route = await prisma.route.findFirst({ where: { id: routeId, ...APPROVED_PUBLIC_ROUTE_WHERE }, select: { id: true } });
   if (!route) return { error: "Route not found" };
 
   try {
@@ -72,7 +73,7 @@ export async function toggleRouteTag(formData: FormData): Promise<void> {
   const selected = formData.get("selected") === "true";
   if (typeof routeId !== "string" || typeof slug !== "string") return;
   const [route, tag] = await Promise.all([
-    prisma.route.findUnique({ where: { id: routeId }, select: { id: true } }),
+    prisma.route.findFirst({ where: { id: routeId, ...APPROVED_PUBLIC_ROUTE_WHERE }, select: { id: true } }),
     prisma.tag.findUnique({ where: { slug }, select: { id: true } }),
   ]);
   if (!route || !tag) return;
@@ -95,7 +96,7 @@ export async function toggleSavedRoute(formData: FormData): Promise<void> {
   const routeId = formData.get("routeId");
   const saved = formData.get("saved") === "true";
   if (typeof routeId !== "string") return;
-  const route = await prisma.route.findUnique({ where: { id: routeId }, select: { id: true } });
+  const route = await prisma.route.findFirst({ where: { id: routeId, ...APPROVED_PUBLIC_ROUTE_WHERE }, select: { id: true } });
   if (!route) return;
   if (saved) {
     await prisma.savedRoute.deleteMany({ where: { routeId, userId: user.id } });

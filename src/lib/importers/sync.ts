@@ -4,6 +4,7 @@ import { GeometryCompleteness, ImportRunStatus, PathSource, RouteShape, SourceRe
 import { normaliseGrade } from "@/lib/grades";
 import { generateLinkSuggestions } from "@/lib/matching";
 import { lineStartPoint } from "@/lib/tracks";
+import { evaluateImportedRoute, routeInputFingerprint, ROUTE_QUALITY_POLICY_VERSION } from "@/lib/routes/quality-policy";
 import { decideCanonicalMatch, shouldApplyImportedField } from "./deduplication";
 import { sourceAttribution } from "./source-attribution";
 import { withEstimatedHikingDuration } from "./enrichment";
@@ -28,6 +29,9 @@ export type SourceSyncResult = {
   merged: number;
   suggested: number;
   stale: number;
+  accepted: number;
+  quarantined: number;
+  rejected: number;
   snapshotComplete: boolean;
   cursor: string | null;
   errors: { route?: string; code?: string; message: string }[];
@@ -127,14 +131,25 @@ async function ingestRoute(
   route: ExternalRoute,
   context: { shard: string; activity: string; snapshotId: string; areaCache: Map<string, string> }
 ) {
+  const fingerprint = routeInputFingerprint(importer.source, route);
   const existingRecord = await prisma.routeSourceRecord.findUnique({
     where: { source_externalId: { source: importer.source, externalId: route.externalId } },
     include: { route: true },
   });
+  if (existingRecord?.inputFingerprint === fingerprint && existingRecord.policyVersion === ROUTE_QUALITY_POLICY_VERSION && existingRecord.publicationState === "rejected") {
+    await prisma.routeSourceRecord.update({
+      where: { id: existingRecord.id },
+      data: {
+        lastSeenAt: new Date(), importSnapshot: context.snapshotId,
+        importCheckpoint: route.importCursor, status: SourceRecordStatus.active, staleAt: null,
+      },
+    });
+    return { outcome: null, classification: "rejected" as const, suggested: false };
+  }
   // Routes imported before route_source_records was introduced still carry
-  // their source identity on the canonical row. Adopt that row instead of
-  // attempting to create a duplicate that violates the legacy compound key.
-  const legacyRoute = existingRecord
+  // their source identity on the canonical row. Preserve/adopt that row even
+  // when the new policy rejects the source record.
+  const legacyRoute = existingRecord?.routeId
     ? null
     : await prisma.route.findUnique({
         where: {
@@ -144,6 +159,62 @@ async function ingestRoute(
           },
         },
       });
+  const policy = evaluateImportedRoute(importer.source, route);
+  const registry = sourceAttribution(importer.source);
+  const sourceRecordValues = {
+    sourceShard: context.shard,
+    sourceActivity: context.activity,
+    externalUrl: route.externalUrl,
+    licence: route.licence ?? importer.defaultLicence ?? registry?.licence ?? "Licence not registered",
+    licenceUrl: route.licenceUrl ?? importer.defaultLicenceUrl ?? registry?.licenceUrl,
+    attribution: route.attribution ?? importer.defaultAttribution ?? registry?.attribution ?? importer.source,
+    rawMetadataJson: json(route.rawMetadata),
+    fieldProvenanceJson: json({ difficulty: route.difficultyDerivation, calculatedLength: route.calculatedLengthM !== null && route.calculatedLengthM !== undefined, calculatedAscent: route.calculatedAscentM !== null && route.calculatedAscentM !== undefined, calculatedDuration: route.calculatedDurationMins !== null && route.calculatedDurationMins !== undefined }),
+    sourceUpdatedAt: route.sourceUpdatedAt,
+    lastSeenAt: new Date(),
+    importSnapshot: context.snapshotId,
+    importCheckpoint: route.importCursor,
+    geometryGeojson: json(route.pathGeojson),
+    geometryCompleteness: (route.geometryCompleteness ?? "unknown") as GeometryCompleteness,
+    geometrySegmentsJson: json(route.geometrySegments),
+    sourceName: route.name,
+    sourceGradeRaw: route.gradeRaw,
+    sourceDistanceM: route.lengthM,
+    sourceAscentM: route.ascentM,
+    sourceDescentM: route.descentM,
+    publicationState: policy.state,
+    verificationStatus: policy.verificationStatus,
+    decisionReasons: policy.reasons,
+    qualityScore: policy.qualityScore,
+    qualitySignalsJson: json(policy.signals),
+    sourceAuthority: policy.sourceAuthority,
+    policyVersion: policy.policyVersion,
+    inputFingerprint: policy.inputFingerprint,
+    evaluatedAt: new Date(),
+    status: SourceRecordStatus.active,
+    staleAt: null,
+  };
+
+  if (policy.state === "rejected") {
+    const preservedRouteId = existingRecord?.routeId ?? legacyRoute?.id ?? null;
+    if (preservedRouteId && !existingRecord?.route?.moderationLocked && existingRecord?.route?.publicationState !== "approved") {
+      await prisma.route.update({
+        where: { id: preservedRouteId },
+        data: {
+          publicationState: "rejected", verificationStatus: "failed",
+          verificationReason: policy.reasons.join(", "), moderationReason: policy.reasons.join(", "),
+          qualityScore: policy.qualityScore, qualitySignalsJson: policy.signals,
+          sourceAuthority: policy.sourceAuthority, policyVersion: policy.policyVersion, moderatedAt: new Date(),
+        },
+      });
+    }
+    await prisma.routeSourceRecord.upsert({
+      where: { source_externalId: { source: importer.source, externalId: route.externalId } },
+      create: { routeId: preservedRouteId, source: importer.source, externalId: route.externalId, ...sourceRecordValues },
+      update: { routeId: preservedRouteId, ...sourceRecordValues },
+    });
+    return { outcome: null, classification: "rejected" as const, suggested: false };
+  }
   const areaId = route.area ? await findOrCreateArea(prisma, context.areaCache, route.area) : null;
   const values = canonicalValues(route, areaId);
   const precedence = importer.precedence ?? 100;
@@ -151,21 +222,39 @@ async function ingestRoute(
   let outcome: "added" | "updated" | "merged" = "updated";
   let suggestedCandidateId: string | null = null;
 
-  if (existingRecord) {
-    canonicalId = existingRecord.routeId;
+  if (existingRecord?.route) {
+    canonicalId = existingRecord.routeId!;
+    const preserveModeration = existingRecord.route.moderationLocked || (existingRecord.route.publicationState === "approved" && policy.state !== "approved");
     await prisma.route.update({
       where: { id: canonicalId },
-      data: precedenceUpdate(existingRecord.route.canonicalFieldMetaJson, values, precedence, importer.source),
+      data: {
+        ...precedenceUpdate(existingRecord.route.canonicalFieldMetaJson, values, precedence, importer.source),
+        publicationState: preserveModeration ? existingRecord.route.publicationState : policy.state,
+        verificationStatus: preserveModeration ? existingRecord.route.verificationStatus : policy.verificationStatus,
+        verificationReason: preserveModeration ? existingRecord.route.verificationReason : policy.reasons.join(", "),
+        moderationReason: preserveModeration ? existingRecord.route.moderationReason : policy.reasons.join(", "),
+        qualityScore: policy.qualityScore, qualitySignalsJson: policy.signals,
+        sourceAuthority: policy.sourceAuthority, policyVersion: policy.policyVersion, moderatedAt: new Date(),
+      },
     });
   } else if (legacyRoute) {
     canonicalId = legacyRoute.id;
+    const preserveModeration = legacyRoute.moderationLocked;
     await prisma.route.update({
       where: { id: canonicalId },
-      data: precedenceUpdate(legacyRoute.canonicalFieldMetaJson, values, precedence, importer.source),
+      data: {
+        ...precedenceUpdate(legacyRoute.canonicalFieldMetaJson, values, precedence, importer.source),
+        origin: "imported", publicationState: preserveModeration ? legacyRoute.publicationState : policy.state,
+        verificationStatus: preserveModeration ? legacyRoute.verificationStatus : policy.verificationStatus,
+        verificationReason: preserveModeration ? legacyRoute.verificationReason : policy.reasons.join(", "),
+        moderationReason: preserveModeration ? legacyRoute.moderationReason : policy.reasons.join(", "),
+        qualityScore: policy.qualityScore, qualitySignalsJson: policy.signals,
+        sourceAuthority: policy.sourceAuthority, policyVersion: policy.policyVersion, moderatedAt: new Date(),
+      },
     });
   } else {
     const candidates = await prisma.route.findMany({
-      where: { discipline: route.discipline },
+      where: { discipline: route.discipline, origin: "imported" },
       include: { area: true, sourceRecords: { select: { externalUrl: true, rawMetadataJson: true } } },
       orderBy: { updatedAt: "desc" },
       take: 250,
@@ -184,6 +273,16 @@ async function ingestRoute(
           canonicalFieldMetaJson: fieldMeta,
           externalSource: importer.source,
           externalId: route.externalId,
+          origin: "imported",
+          publicationState: policy.state,
+          verificationStatus: policy.verificationStatus,
+          verificationReason: policy.reasons.join(", "),
+          moderationReason: policy.reasons.join(", "),
+          qualityScore: policy.qualityScore,
+          qualitySignalsJson: policy.signals,
+          sourceAuthority: policy.sourceAuthority,
+          policyVersion: policy.policyVersion,
+          moderatedAt: new Date(),
         },
       });
       canonicalId = created.id;
@@ -192,58 +291,15 @@ async function ingestRoute(
     }
   }
 
-  const registry = sourceAttribution(importer.source);
   await prisma.routeSourceRecord.upsert({
     where: { source_externalId: { source: importer.source, externalId: route.externalId } },
     create: {
       routeId: canonicalId,
       source: importer.source,
-      sourceShard: context.shard,
-      sourceActivity: context.activity,
       externalId: route.externalId,
-      externalUrl: route.externalUrl,
-      licence: route.licence ?? importer.defaultLicence ?? registry?.licence ?? "Licence not registered",
-      licenceUrl: route.licenceUrl ?? importer.defaultLicenceUrl ?? registry?.licenceUrl,
-      attribution: route.attribution ?? importer.defaultAttribution ?? registry?.attribution ?? importer.source,
-      rawMetadataJson: json(route.rawMetadata),
-      fieldProvenanceJson: json({ difficulty: route.difficultyDerivation, calculatedLength: route.calculatedLengthM !== null && route.calculatedLengthM !== undefined, calculatedAscent: route.calculatedAscentM !== null && route.calculatedAscentM !== undefined, calculatedDuration: route.calculatedDurationMins !== null && route.calculatedDurationMins !== undefined }),
-      sourceUpdatedAt: route.sourceUpdatedAt,
-      importSnapshot: context.snapshotId,
-      importCheckpoint: route.importCursor,
-      geometryGeojson: json(route.pathGeojson),
-      geometryCompleteness: (route.geometryCompleteness ?? "unknown") as GeometryCompleteness,
-      geometrySegmentsJson: json(route.geometrySegments),
-      sourceName: route.name,
-      sourceGradeRaw: route.gradeRaw,
-      sourceDistanceM: route.lengthM,
-      sourceAscentM: route.ascentM,
-      sourceDescentM: route.descentM,
+      ...sourceRecordValues,
     },
-    update: {
-      routeId: canonicalId,
-      sourceShard: context.shard,
-      sourceActivity: context.activity,
-      externalUrl: route.externalUrl,
-      licence: route.licence ?? importer.defaultLicence ?? registry?.licence ?? "Licence not registered",
-      licenceUrl: route.licenceUrl ?? importer.defaultLicenceUrl ?? registry?.licenceUrl,
-      attribution: route.attribution ?? importer.defaultAttribution ?? registry?.attribution ?? importer.source,
-      rawMetadataJson: json(route.rawMetadata),
-      fieldProvenanceJson: json({ difficulty: route.difficultyDerivation, calculatedLength: route.calculatedLengthM !== null && route.calculatedLengthM !== undefined, calculatedAscent: route.calculatedAscentM !== null && route.calculatedAscentM !== undefined, calculatedDuration: route.calculatedDurationMins !== null && route.calculatedDurationMins !== undefined }),
-      sourceUpdatedAt: route.sourceUpdatedAt,
-      lastSeenAt: new Date(),
-      importSnapshot: context.snapshotId,
-      importCheckpoint: route.importCursor,
-      geometryGeojson: json(route.pathGeojson),
-      geometryCompleteness: (route.geometryCompleteness ?? "unknown") as GeometryCompleteness,
-      geometrySegmentsJson: json(route.geometrySegments),
-      sourceName: route.name,
-      sourceGradeRaw: route.gradeRaw,
-      sourceDistanceM: route.lengthM,
-      sourceAscentM: route.ascentM,
-      sourceDescentM: route.descentM,
-      status: SourceRecordStatus.active,
-      staleAt: null,
-    },
+    update: { routeId: canonicalId, ...sourceRecordValues },
   });
 
   if (suggestedCandidateId) {
@@ -254,13 +310,13 @@ async function ingestRoute(
       update: { score: decision.score, reasonsJson: decision.reasons },
     });
   }
-  return { outcome, suggested: Boolean(suggestedCandidateId) };
+  return { outcome, classification: policy.state === "approved" ? "accepted" as const : "quarantined" as const, suggested: Boolean(suggestedCandidateId) };
 }
 
 export async function syncSource(prisma: PrismaClient, importer: RouteImporter, options: SyncOptions): Promise<SourceSyncResult> {
   const shard = options.shard ?? (importer.source === "osm_geofabrik" ? "uk-england" : "default");
   const activity = options.activity ?? "all";
-  const result: SourceSyncResult = { source: importer.source, shard, activity, added: 0, updated: 0, merged: 0, suggested: 0, stale: 0, snapshotComplete: false, cursor: null, errors: [] };
+  const result: SourceSyncResult = { source: importer.source, shard, activity, added: 0, updated: 0, merged: 0, suggested: 0, stale: 0, accepted: 0, quarantined: 0, rejected: 0, snapshotComplete: false, cursor: null, errors: [] };
   const checkpoint = await prisma.routeImportCheckpoint.findUnique({
     where: { source_shard_activity: { source: importer.source, shard, activity } },
   });
@@ -277,7 +333,8 @@ export async function syncSource(prisma: PrismaClient, importer: RouteImporter, 
       const route = withEstimatedHikingDuration(item.value);
       try {
         const ingested = await ingestRoute(prisma, importer, route, { shard, activity, snapshotId, areaCache });
-        result[ingested.outcome]++;
+        if (ingested.outcome) result[ingested.outcome]++;
+        result[ingested.classification]++;
         if (ingested.suggested) result.suggested++;
         lastSuccessfulCursor = route.importCursor ?? lastSuccessfulCursor;
       } catch (error) {
@@ -309,6 +366,7 @@ export async function syncSource(prisma: PrismaClient, importer: RouteImporter, 
     data: {
       source: importer.source, shard, activity, routesAdded: result.added, routesUpdated: result.updated,
       routesMerged: result.merged, suggestionsCreated: result.suggested, routesStale: result.stale,
+      routesAccepted: result.accepted, routesQuarantined: result.quarantined, routesRejected: result.rejected,
       snapshotId: completion?.snapshotId ?? snapshotId, cursorStart, cursorEnd: result.cursor,
       snapshotComplete: result.snapshotComplete,
       status: runSucceeded ? ImportRunStatus.succeeded : (result.added + result.updated + result.merged > 0 ? ImportRunStatus.partial : ImportRunStatus.failed),

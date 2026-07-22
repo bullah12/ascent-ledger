@@ -6,17 +6,18 @@ import { createClimb } from "../actions";
 import { ClimbForm } from "../climb-form";
 import { SiteNav } from "@/components/site-nav";
 import { getUserProgressAndSuggestions } from "@/lib/bmg/user-progress";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 
 export default async function NewClimbPage({
   searchParams,
 }: {
-  searchParams: Promise<{ routeId?: string }>;
+  searchParams: Promise<{ routeId?: string; customTrailId?: string }>;
 }) {
   const user = await requireOnboardedUser();
-  const { routeId } = await searchParams;
+  const { routeId, customTrailId } = await searchParams;
   const route = routeId
-    ? await prisma.route.findUnique({
-        where: { id: routeId },
+    ? await prisma.route.findFirst({
+        where: { id: routeId, ...APPROVED_PUBLIC_ROUTE_WHERE },
         select: {
           id: true,
           name: true,
@@ -29,11 +30,18 @@ export default async function NewClimbPage({
         },
       })
     : null;
+  const customTrail = customTrailId
+    ? await prisma.customTrail.findFirst({
+        where: { id: customTrailId, ownerId: user.id },
+        select: { id: true, name: true, discipline: true, gradeSystem: true, gradeRaw: true, ascentM: true, estimatedDurationMins: true, areaName: true },
+      })
+    : null;
+  const linked = route ?? customTrail;
   const [{ progress }, climbCount] = await Promise.all([
     getUserProgressAndSuggestions(prisma, user),
     prisma.climb.count({ where: { userId: user.id } }),
   ]);
-  const relevantCategory = progress.find((category) => category.key === route?.discipline);
+  const relevantCategory = progress.find((category) => category.key === linked?.discipline);
   const progressDeltas = relevantCategory
     ? relevantCategory.rules.filter((rule) => !rule.met).slice(0, 2).map((rule) => ({
         label: rule.description,
@@ -54,26 +62,27 @@ export default async function NewClimbPage({
       <ClimbForm
         action={createClimb}
         submitLabel="Log climb"
-        linkedRoute={route ? {
-          id: route.id,
-          name: route.name,
-          discipline: route.discipline,
-          gradeRaw: route.gradeRaw,
-          areaName: route.area?.name ?? null,
+        linkedRoute={linked ? {
+          id: linked.id,
+          kind: customTrail ? "custom" : "canonical",
+          name: linked.name,
+          discipline: linked.discipline,
+          gradeRaw: linked.gradeRaw,
+          areaName: customTrail ? customTrail.areaName : route?.area?.name ?? null,
         } : null}
         progressDeltas={progressDeltas}
-        defaultValues={route ? {
-          routeName: route.name,
-          discipline: route.discipline,
+        defaultValues={linked ? {
+          routeName: linked.name,
+          discipline: linked.discipline,
           date: new Date().toISOString().slice(0, 10),
-          gradeSystem: route.gradeSystem ?? gradeSystemsByDiscipline[route.discipline][0],
-          gradeRaw: route.gradeRaw ?? "",
+          gradeSystem: linked.gradeSystem ?? gradeSystemsByDiscipline[linked.discipline][0],
+          gradeRaw: linked.gradeRaw ?? "",
           ascentStyle: AscentStyle.led,
-          area: route.area?.name ?? "",
+          area: customTrail ? customTrail.areaName ?? "" : route?.area?.name ?? "",
           notes: "",
           visibility: ClimbVisibility.private,
-          ascentM: route.ascentM,
-          durationMinutes: route.estimatedDurationMins,
+          ascentM: linked.ascentM,
+          durationMinutes: linked.estimatedDurationMins,
           variant: null,
           conditions: [],
           partners: "",

@@ -54,8 +54,12 @@ export const climbInputSchema = z.object({
   notes: z.string().trim().max(2000, "Notes are too long").optional(),
   // Optional link to a canonical Route (Phase 3); climbs may stay free-text.
   routeId: z.uuid({ error: "Invalid route" }).optional(),
+  customTrailId: z.uuid({ error: "Invalid custom trail" }).optional(),
   visibility: z.enum(ClimbVisibility).default(ClimbVisibility.private),
 }).refine(
+  (climb) => !(climb.routeId && climb.customTrailId),
+  { error: "Choose either a public route or a custom trail", path: ["routeId"] }
+).refine(
   (climb) => gradeSystemsByDiscipline[climb.discipline].includes(climb.gradeSystem),
   { error: "Grade system does not match the discipline", path: ["gradeSystem"] }
 );

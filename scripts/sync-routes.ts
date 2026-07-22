@@ -84,7 +84,7 @@ async function main() {
   try {
     if (options.health) {
       const rows = await importHealthReport(prisma);
-      console.table(rows.map((row) => ({ source: row.source, shard: row.shard, activity: row.activity, status: row.status, at: row.runAt.toISOString(), added: row.routesAdded, updated: row.routesUpdated, merged: row.routesMerged, suggested: row.suggestionsCreated, stale: row.routesStale, complete: row.snapshotComplete, cursor: row.cursorEnd })));
+      console.table(rows.map((row) => ({ source: row.source, shard: row.shard, activity: row.activity, status: row.status, at: row.runAt.toISOString(), accepted: row.routesAccepted, quarantined: row.routesQuarantined, rejected: row.routesRejected, added: row.routesAdded, updated: row.routesUpdated, merged: row.routesMerged, suggested: row.suggestionsCreated, stale: row.routesStale, complete: row.snapshotComplete, cursor: row.cursorEnd })));
       return;
     }
     const unknown = options.sources.filter((source) => !REGISTRY.some((importer) => importer.source === source));

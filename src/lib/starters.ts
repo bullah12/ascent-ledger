@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { Discipline } from "@/generated/prisma/enums";
 import { normaliseText } from "@/lib/matching";
+import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
 
 export type StarterRoute = {
   id: string;
@@ -54,10 +55,13 @@ export async function getStarterPacks(
   preference: { preferredDisciplines: Discipline[]; homeRegion: string | null }
 ): Promise<StarterPack[]> {
   const routes = await prisma.route.findMany({
-    where:
+    where: {
+      ...APPROVED_PUBLIC_ROUTE_WHERE,
+      ...(
       preference.preferredDisciplines.length > 0
         ? { starterDisciplines: { hasSome: preference.preferredDisciplines } }
-        : { starterDisciplines: { isEmpty: false } },
+        : { starterDisciplines: { isEmpty: false } }),
+    },
     select: {
       id: true,
       name: true,
