@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "auth:doctor": "tsx scripts/auth-doctor.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:starters": "tsx scripts/seed-starter-routes.ts",
     "db:seed:tags": "tsx scripts/seed-tags.ts",

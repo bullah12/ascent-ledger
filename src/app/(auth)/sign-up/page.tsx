@@ -3,7 +3,9 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClientOrNull } from "@/lib/supabase/client";
+import { SUPABASE_CONFIG_ERROR } from "@/lib/supabase/env";
+import { describeAuthError } from "../auth-errors";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,7 +30,13 @@ export default function SignUpPage() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    const supabase = createClientOrNull();
+    if (!supabase) {
+      setError(SUPABASE_CONFIG_ERROR);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -38,7 +46,20 @@ export default function SignUpPage() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(describeAuthError(error));
+      setLoading(false);
+      return;
+    }
+
+    // When "prevent user enumeration" is on (the default), signing up with an
+    // address that already exists succeeds with an empty identities array and
+    // sends no email. Say so rather than showing a check-your-inbox message
+    // for a mail that will never arrive.
+    if (data.user && data.user.identities?.length === 0) {
+      setError(
+        "An account already exists for this email. Sign in instead, or reset " +
+          "the password if you've forgotten it."
+      );
       setLoading(false);
       return;
     }
