@@ -47,12 +47,15 @@ function ForgotPasswordForm() {
       return;
     }
 
-    // The emailed link lands on the auth callback, which establishes the
-    // recovery session and then forwards to the page that sets the new
-    // password. This URL must be listed under Supabase → Authentication →
+    // The emailed link lands straight on the page that sets the new password;
+    // that page establishes the recovery session from the URL itself. On the
+    // deployed site this resolves to
+    // https://ascent-ledger-delta.vercel.app/reset-password — taking the
+    // origin from the browser keeps local and preview builds working too.
+    // Every origin used must be listed under Supabase → Authentication →
     // URL Configuration → Redirect URLs.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {

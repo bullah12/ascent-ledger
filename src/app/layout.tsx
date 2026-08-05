@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Archivo, IBM_Plex_Mono } from "next/font/google";
+import { AuthRecoveryListener } from "@/components/auth-recovery-listener";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import "./globals.css";
 
@@ -53,6 +54,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ServiceWorkerRegister />
+        <AuthRecoveryListener />
         {children}
       </body>
     </html>
