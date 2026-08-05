@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createClientOrNull } from "@/lib/supabase/client";
+import { SUPABASE_CONFIG_ERROR } from "@/lib/supabase/env";
+import { describeAuthError } from "../auth-errors";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,25 +18,43 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
+  );
+}
+
+function SignInForm() {
   const router = useRouter();
+  // /auth/callback and /auth/confirm redirect back here with ?error=... when
+  // a confirmation link fails; show that until the form reports its own error.
+  const callbackError = useSearchParams().get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const shownError = error ?? callbackError;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    const supabase = createClientOrNull();
+    if (!supabase) {
+      setError(SUPABASE_CONFIG_ERROR);
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      setError(error.message);
+      setError(describeAuthError(error));
       setLoading(false);
       return;
     }
@@ -76,9 +96,9 @@ export default function SignInPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            {error && (
+            {shownError && (
               <p className="text-sm text-destructive" role="alert">
-                {error}
+                {shownError}
               </p>
             )}
             <Button type="submit" disabled={loading}>

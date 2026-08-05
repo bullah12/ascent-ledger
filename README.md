@@ -63,6 +63,7 @@ climbs.
 | `npm run typecheck` | `tsc --noEmit`                  |
 | `npm run lint`      | ESLint                          |
 | `npm test`          | Vitest unit tests               |
+| `npm run auth:doctor` | Check Supabase Auth: credentials, reachability, key validity, sign-up settings |
 | `npm run backfill:tracks -- --dry-run` | Parse existing `gpx_track_url` files without writing |
 | `npm run backfill:tracks` | Populate missing Climb `path_geojson` values |
 | `npm run sync:routes -- --source=osm_geofabrik --shard=uk-england --max=200` | Run a bounded, resumable UK extract import |

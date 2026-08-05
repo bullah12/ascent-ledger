@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { readSupabaseCredentials } from "@/lib/supabase/env";
 
 // Session handling (Next.js 16 proxy, formerly middleware): refreshes the
 // Supabase auth token on every matched request and keeps request/response
@@ -7,16 +8,14 @@ import { NextResponse, type NextRequest } from "next/server";
 export default async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   // Without Supabase env vars (e.g. fresh clone), skip auth handling
   // entirely instead of crashing every request.
-  if (!supabaseUrl || !supabaseKey) {
+  const credentials = readSupabaseCredentials();
+  if (!credentials) {
     return response;
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+  const supabase = createServerClient(credentials.url, credentials.key, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
