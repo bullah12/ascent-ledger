@@ -62,6 +62,13 @@ export function describeAuthError(error: AuthError): string {
     case "user_already_exists":
     case "email_exists":
       return "An account already exists for this email — sign in instead.";
+    case "same_password":
+      return "That is already your password — choose a different one.";
+    case "reauthentication_needed":
+      return (
+        "This password reset link has expired. Request a new one from the " +
+        "sign-in page."
+      );
     case "weak_password":
       return `That password was rejected: ${message}`;
     default:

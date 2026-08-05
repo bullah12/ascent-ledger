@@ -54,6 +54,28 @@ Open <http://localhost:3000>. Sign up, confirm your email, and you land on
 the dashboard — from there, open the logbook at `/logbook` to start logging
 climbs.
 
+### Password reset
+
+`/forgot-password` emails a recovery link; the link lands on
+`/auth/callback?next=/reset-password`, which turns the one-time token into a
+session, and `/reset-password` then sets the new password. For the link to
+work, add both of these to Supabase → Authentication → URL Configuration →
+Redirect URLs (once per deployment origin):
+
+```
+http://localhost:3000/auth/callback
+https://<your-domain>/auth/callback
+```
+
+The default "Reset Password" email template works as-is. If you switch it to
+the token-hash form, point it at
+`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery` —
+`/auth/confirm` sends `type=recovery` to `/reset-password` on its own.
+
+Recovery emails go through the same sender as confirmations, so the built-in
+sender's few-per-hour limit applies; `npm run auth:doctor` reports whether
+that is what you are hitting.
+
 ## Scripts
 
 | Command             | What it does                    |

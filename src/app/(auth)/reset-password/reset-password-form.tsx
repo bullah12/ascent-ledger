@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { createClientOrNull } from "@/lib/supabase/client";
 import { SUPABASE_CONFIG_ERROR } from "@/lib/supabase/env";
 import { describeAuthError } from "../auth-errors";
@@ -17,28 +16,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function SignInPage() {
-  return (
-    <Suspense>
-      <SignInForm />
-    </Suspense>
-  );
-}
-
-function SignInForm() {
+export function ResetPasswordForm({ email }: { email: string }) {
   const router = useRouter();
-  // /auth/callback and /auth/confirm redirect back here with ?error=... when
-  // a confirmation link fails; show that until the form reports its own error.
-  const callbackError = useSearchParams().get("error");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const shownError = error ?? callbackError;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (password !== confirmation) {
+      setError("The two passwords do not match.");
+      return;
+    }
+
     setLoading(true);
 
     const supabase = createClientOrNull();
@@ -48,10 +41,7 @@ function SignInForm() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
       setError(describeAuthError(error));
@@ -67,57 +57,46 @@ function SignInForm() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
+          <CardTitle>Choose a new password</CardTitle>
           <CardDescription>
-            Welcome back to Ascent Ledger.
+            {email ? `Signed in as ${email}.` : null} Your new password
+            replaces the old one everywhere.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-muted-foreground underline underline-offset-4"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password">New password</Label>
               <Input
                 id="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            {shownError && (
+            <div className="grid gap-2">
+              <Label htmlFor="confirmation">Confirm new password</Label>
+              <Input
+                id="confirmation"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={6}
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+              />
+            </div>
+            {error && (
               <p className="text-sm text-destructive" role="alert">
-                {shownError}
+                {error}
               </p>
             )}
             <Button type="submit" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? "Saving…" : "Save new password"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              No account?{" "}
-              <Link href="/sign-up" className="underline underline-offset-4">
-                Sign up
-              </Link>
-            </p>
           </form>
         </CardContent>
       </Card>
