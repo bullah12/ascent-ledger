@@ -56,13 +56,17 @@ climbs.
 
 ### Password reset
 
-`/forgot-password` emails a recovery link; the link lands on
-`/auth/callback?next=/reset-password`, which turns the one-time token into a
-session, and `/reset-password` then sets the new password. For the link to
-work, add both of these to Supabase → Authentication → URL Configuration →
+`/forgot-password` emails a recovery link that lands directly on
+`/reset-password`. That page is public: it lets the Supabase client consume
+whatever the link carried (a PKCE `?code=`, an `#access_token=` fragment, or a
+`?token_hash=`) *before* asking whether there is a session, then takes the new
+password and sends the visitor to `/login` (the sign-in screen). For the link
+to work, add these to Supabase → Authentication → URL Configuration →
 Redirect URLs (once per deployment origin):
 
 ```
+http://localhost:3000/reset-password
+https://<your-domain>/reset-password
 http://localhost:3000/auth/callback
 https://<your-domain>/auth/callback
 ```
@@ -71,6 +75,13 @@ The default "Reset Password" email template works as-is. If you switch it to
 the token-hash form, point it at
 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery` —
 `/auth/confirm` sends `type=recovery` to `/reset-password` on its own.
+
+A reset started from the Supabase dashboard (Authentication → Users → Reset
+password) ignores that redirect and uses the project's **Site URL**, so the
+credentials can land on any page. A global listener in the root layout watches
+for the `PASSWORD_RECOVERY` event and routes to `/reset-password` wherever that
+happens. Expired or already-used links show an explanation there plus a button
+back to `/forgot-password`.
 
 Recovery emails go through the same sender as confirmations, so the built-in
 sender's few-per-hour limit applies; `npm run auth:doctor` reports whether
