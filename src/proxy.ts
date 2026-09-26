@@ -42,6 +42,7 @@ export default async function proxy(request: NextRequest) {
     "/dashboard",
     "/logbook",
     "/routes",
+    "/peaks",
     "/map",
     "/settings",
     "/for-you",

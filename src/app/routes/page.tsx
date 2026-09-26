@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
+import { PeakArtwork } from "@/components/peak-artwork";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -40,7 +41,7 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
     ...(selectedGrades.length ? { gradeRaw: { in: selectedGrades } } : {}),
     ...(season === "winter" ? { discipline: Discipline.winter } : season === "summer" ? { discipline: { not: Discipline.winter } } : {}),
     AND: [
-      ...(q ? [{ OR: [{ name: { contains: q, mode: "insensitive" as const } }, { area: { name: { contains: q, mode: "insensitive" as const } } }] }] : []),
+      ...(q ? [{ OR: [{ name: { contains: q, mode: "insensitive" as const } }, { area: { name: { contains: q, mode: "insensitive" as const } } }, { peak: { name: { contains: q, mode: "insensitive" as const } } }] }] : []),
       { OR: [{ lengthM: null }, { lengthM: { lte: Math.max(1, maxDistanceKm) * 1000 } }] },
       { OR: [{ ascentM: null }, { ascentM: { lte: Math.max(0, maxAscentM) } }] },
     ],
@@ -49,7 +50,7 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
   const [routes, areaRows, gradeRows] = await Promise.all([
     prisma.route.findMany({
       where,
-      include: { area: { select: { name: true, region: true } } },
+      include: { area: { select: { name: true, region: true } }, peak: { select: { name: true, imagePath: true } } },
       orderBy: sort === "distance" ? [{ lengthM: "asc" }, { name: "asc" }] : sort === "name" ? [{ name: "asc" }] : [{ avgRating: { sort: "desc", nulls: "last" } }, { reviewCount: "desc" }, { name: "asc" }],
       take: 500,
     }),
@@ -101,9 +102,9 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
 
           {routes.length ? <div className="divide-y">{routes.map((route) => (
             <article key={route.id} className="group flex gap-4 p-5 transition-colors hover:bg-muted/35">
-              <Link href={`/routes/${route.id}`} aria-label={`Open ${route.name}`} className="topographic-placeholder size-20 shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+              <Link href={`/routes/${route.id}`} aria-label={`Open ${route.name}`} className="shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><PeakArtwork name={route.peak?.name} imagePath={route.peak?.imagePath} className="size-20 rounded-xl" /></Link>
               <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-4"><div className="min-w-0"><h2 className="truncate text-[17px] font-bold"><Link href={`/routes/${route.id}`} className="hover:text-primary hover:underline">{route.name}</Link></h2><p className="mt-0.5 flex items-center gap-1 font-mono text-[10px] text-muted-foreground"><MapPin className="size-3" />{route.area?.name ?? route.area?.region ?? "Area not recorded"}</p></div><div className="shrink-0 text-right">{route.avgRating !== null ? <span className="flex items-center gap-1 font-mono text-sm text-amber-600"><Star className="size-3.5 fill-current" />{route.avgRating.toFixed(1)}</span> : <span className="font-mono text-[10px] text-muted-foreground">Unrated</span>}</div></div>
+                <div className="flex items-start justify-between gap-4"><div className="min-w-0"><h2 className="truncate text-[17px] font-bold"><Link href={`/routes/${route.id}`} className="hover:text-primary hover:underline">{route.name}</Link></h2><p className="mt-0.5 flex items-center gap-1 font-mono text-[10px] text-muted-foreground"><MapPin className="size-3" />{route.peak?.name ?? route.area?.name ?? route.area?.region ?? "Area not recorded"}</p></div><div className="shrink-0 text-right">{route.avgRating !== null ? <span className="flex items-center gap-1 font-mono text-sm text-amber-600"><Star className="size-3.5 fill-current" />{route.avgRating.toFixed(1)}</span> : <span className="font-mono text-[10px] text-muted-foreground">Unrated</span>}</div></div>
                 <div className="mt-3 flex flex-wrap items-center gap-2"><Badge variant="secondary" className="bg-accent text-accent-foreground">{route.gradeRaw ?? disciplineLabels[route.discipline]}</Badge>{route.lengthM !== null && <Badge variant="secondary">↔ {(route.lengthM / 1000).toFixed(1)} km</Badge>}{route.ascentM !== null && <Badge variant="secondary"><Mountain className="size-3" /> {route.ascentM.toLocaleString()} m</Badge>}<span className="font-mono text-[10px] text-muted-foreground">{route.reviewCount} review{route.reviewCount === 1 ? "" : "s"}</span>{route.lat !== null && route.lng !== null && <Link href="/map" className="font-mono text-[10px] text-primary hover:underline">View on map</Link>}</div>
               </div>
             </article>

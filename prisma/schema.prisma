@@ -219,6 +219,27 @@ model Area {
   @@schema("ascent_ledger")
 }
 
+// A named summit or mountain. Several route variants can share one peak and
+// its artwork while retaining their own grades, geometry and provenance.
+model Peak {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique
+  name        String
+  region      String
+  country     String
+  elevationM  Int?     @map("elevation_m")
+  summary     String?
+  imagePath   String?  @map("image_path")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  routes Route[]
+
+  @@index([name])
+  @@map("peaks")
+  @@schema("ascent_ledger")
+}
+
 // BMG prerequisite category (one per discipline). Editable config, seeded
 // from docs/bmg_rules.seed.json via `npm run db:seed`.
 model BmgCategory {
@@ -266,6 +287,8 @@ model Route {
   name                   String
   areaId                 String?                 @map("area_id") @db.Uuid
   area                   Area?                   @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  peakId                 String?                 @map("peak_id") @db.Uuid
+  peak                   Peak?                   @relation(fields: [peakId], references: [id], onDelete: SetNull)
   discipline             Discipline
   gradeSystem            GradeSystem?            @map("grade_system")
   gradeRaw               String?                 @map("grade_raw")
@@ -326,6 +349,7 @@ model Route {
 
   @@unique([externalSource, externalId])
   @@index([name])
+  @@index([peakId])
   @@index([publicationState, origin])
   @@map("routes")
   @@schema("ascent_ledger")

@@ -19,8 +19,12 @@ export async function GET(request: NextRequest) {
   }
 
   const [routes, customTrails] = await Promise.all([prisma.route.findMany({
-    where: { ...APPROVED_PUBLIC_ROUTE_WHERE, name: { contains: query, mode: "insensitive" } },
-    include: { area: { select: { name: true } } },
+    where: { ...APPROVED_PUBLIC_ROUTE_WHERE, OR: [
+      { name: { contains: query, mode: "insensitive" } },
+      { area: { name: { contains: query, mode: "insensitive" } } },
+      { peak: { name: { contains: query, mode: "insensitive" } } },
+    ] },
+    include: { area: { select: { name: true } }, peak: { select: { name: true, imagePath: true } } },
     orderBy: { name: "asc" },
     take: 10,
   }), prisma.customTrail.findMany({
@@ -36,9 +40,12 @@ export async function GET(request: NextRequest) {
       discipline: route.discipline,
       gradeRaw: route.gradeRaw,
       areaName: route.area?.name ?? null,
+      peakName: route.peak?.name ?? null,
+      imagePath: route.peak?.imagePath ?? null,
     })), ...customTrails.map((trail) => ({
       id: trail.id, kind: "custom" as const, name: trail.name,
       discipline: trail.discipline, gradeRaw: trail.gradeRaw, areaName: trail.areaName,
+      peakName: null, imagePath: null,
     }))].slice(0, 10),
   });
 }

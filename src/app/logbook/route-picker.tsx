@@ -7,6 +7,7 @@ import type { Discipline } from "@/generated/prisma/enums";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PeakArtwork } from "@/components/peak-artwork";
 
 export type LinkedRoute = {
   id: string;
@@ -15,6 +16,8 @@ export type LinkedRoute = {
   discipline: Discipline;
   gradeRaw: string | null;
   areaName: string | null;
+  peakName?: string | null;
+  imagePath?: string | null;
 };
 
 function routeLabel(route: LinkedRoute): string {
@@ -91,7 +94,7 @@ export function RoutePicker({
 
       {selected ? (
         <div className="flex items-center gap-4 rounded-xl border bg-background p-3 text-sm">
-          <span aria-hidden className="topographic-placeholder size-12 shrink-0 rounded-lg" />
+          <PeakArtwork name={selected.peakName} imagePath={selected.imagePath} className="size-12 shrink-0 rounded-lg" sizes="48px" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-base font-bold">{selected.name}{selected.kind === "custom" ? " · My trail" : ""}</span>
             <span className="block truncate font-mono text-[11px] text-muted-foreground">
@@ -139,7 +142,7 @@ export function RoutePicker({
                           onSelect?.(route);
                         }}
                       >
-                        <span className="truncate">{routeLabel(route)}</span>
+                        <span className="flex min-w-0 items-center gap-2"><PeakArtwork name={route.peakName} imagePath={route.imagePath} className="size-9 shrink-0 rounded-md" sizes="36px" /><span className="truncate">{routeLabel(route)}</span></span>
                         <Badge variant="secondary" className="shrink-0">
                           {disciplineLabels[route.discipline]}
                         </Badge>

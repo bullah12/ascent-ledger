@@ -1,0 +1,302 @@
+{
+  "ben-nevis": {
+    "wikidataId": "Q104674",
+    "lat": 56.796891,
+    "lng": -5.003675,
+    "elevationM": 1345
+  },
+  "ben-macdui": {
+    "wikidataId": "Q816560",
+    "lat": 57.070368,
+    "lng": -3.669099,
+    "elevationM": 1309
+  },
+  "cairn-gorm": {
+    "wikidataId": "Q1025927",
+    "lat": 57.116714,
+    "lng": -3.644477,
+    "elevationM": 1245
+  },
+  "schiehallion": {
+    "wikidataId": "Q948061",
+    "lat": 56.666933,
+    "lng": -4.100229,
+    "elevationM": 1083
+  },
+  "ben-lomond": {
+    "wikidataId": "Q816556",
+    "lat": 56.190293,
+    "lng": -4.633009,
+    "elevationM": 974
+  },
+  "buachaille-etive-mor": {
+    "wikidataId": "Q2927373",
+    "lat": 56.647302777778,
+    "lng": -4.8977972222222,
+    "elevationM": 1021
+  },
+  "bidean-nam-bian": {
+    "wikidataId": "Q4904101",
+    "lat": 56.642768,
+    "lng": -5.029335,
+    "elevationM": 1149
+  },
+  "meall-dearg": {
+    "wikidataId": "Q13130017",
+    "lat": 56.680721,
+    "lng": -5.003266,
+    "elevationM": 952
+  },
+  "liathach": {
+    "wikidataId": "Q3064120",
+    "lat": 57.564327777778,
+    "lng": -5.4621222222222,
+    "elevationM": 1055
+  },
+  "an-teallach": {
+    "wikidataId": "Q3396261",
+    "lat": 57.806530555556,
+    "lng": -5.2516611111111,
+    "elevationM": 967
+  },
+  "stac-pollaidh": {
+    "wikidataId": "Q3396239",
+    "lat": 58.044,
+    "lng": -5.2088111111111,
+    "elevationM": 613
+  },
+  "suilven": {
+    "wikidataId": "Q2731464",
+    "lat": 58.115,
+    "lng": -5.1370694444444,
+    "elevationM": 731
+  },
+  "ben-hope": {
+    "wikidataId": "Q816520",
+    "lat": 58.41355,
+    "lng": -4.6087388888889,
+    "elevationM": 927
+  },
+  "sgurr-alasdair": {
+    "wikidataId": "Q1786941",
+    "lat": 57.206589,
+    "lng": -6.224143,
+    "elevationM": 993
+  },
+  "scafell-pike": {
+    "wikidataId": "Q1146222",
+    "lat": 54.454166666667,
+    "lng": -3.2115277777778,
+    "elevationM": 978
+  },
+  "helvellyn": {
+    "wikidataId": "Q427283",
+    "lat": 54.527230555556,
+    "lng": -3.0160527777778,
+    "elevationM": 950
+  },
+  "skiddaw": {
+    "wikidataId": "Q2292191",
+    "lat": 54.651388888889,
+    "lng": -3.1477777777778,
+    "elevationM": 931
+  },
+  "blencathra": {
+    "wikidataId": "Q4925984",
+    "lat": 54.63985,
+    "lng": -3.0504611111111,
+    "elevationM": 868
+  },
+  "great-gable": {
+    "wikidataId": "Q1502223",
+    "lat": 54.482,
+    "lng": -3.219,
+    "elevationM": 899
+  },
+  "catbells": {
+    "wikidataId": "Q5051616",
+    "lat": 54.5686,
+    "lng": -3.17083,
+    "elevationM": 451
+  },
+  "haystacks": {
+    "wikidataId": "Q5687267",
+    "lat": 54.508,
+    "lng": -3.248,
+    "elevationM": 597
+  },
+  "fairfield": {
+    "wikidataId": "Q1393223",
+    "lat": 54.4969,
+    "lng": -2.99059,
+    "elevationM": 873
+  },
+  "bowfell": {
+    "wikidataId": "Q599892",
+    "lat": 54.447369444444,
+    "lng": -3.1658194444444,
+    "elevationM": 902
+  },
+  "pavey-ark": {
+    "wikidataId": "Q7155851",
+    "lat": 54.4614,
+    "lng": -3.10451,
+    "elevationM": 700
+  },
+  "kinder-scout": {
+    "wikidataId": "Q1741750",
+    "lat": 53.38472222222222,
+    "lng": -1.8738888888888887,
+    "elevationM": 636
+  },
+  "pen-y-ghent": {
+    "wikidataId": "Q1241723",
+    "lat": 54.155277777778,
+    "lng": -2.2497222222222,
+    "elevationM": 694
+  },
+  "whernside": {
+    "wikidataId": "Q1579697",
+    "lat": 54.227777777778,
+    "lng": -2.4033333333333,
+    "elevationM": 736
+  },
+  "yr-wyddfa": {
+    "wikidataId": "Q217142",
+    "lat": 53.068863888889,
+    "lng": -4.0755888888889,
+    "elevationM": 1085
+  },
+  "tryfan": {
+    "wikidataId": "Q3405438",
+    "lat": 53.114938888889,
+    "lng": -3.9975305555556,
+    "elevationM": 917
+  },
+  "glyder-fawr": {
+    "wikidataId": "Q3109361",
+    "lat": 53.10147,
+    "lng": -4.029164,
+    "elevationM": 1001
+  },
+  "glyder-fach": {
+    "wikidataId": "Q5572805",
+    "lat": 53.10482,
+    "lng": -4.00841,
+    "elevationM": 994
+  },
+  "cadair-idris": {
+    "wikidataId": "Q774479",
+    "lat": 52.699827777778,
+    "lng": -3.9086944444444,
+    "elevationM": 893
+  },
+  "pen-y-fan": {
+    "wikidataId": "Q1325530",
+    "lat": 51.884031,
+    "lng": -3.436765,
+    "elevationM": 886
+  },
+  "cribyn": {
+    "wikidataId": "Q3397544",
+    "lat": 51.8817,
+    "lng": -3.41936,
+    "elevationM": 795
+  },
+  "y-garn": {
+    "wikidataId": "Q8519868",
+    "lat": 53.115,
+    "lng": -4.04837,
+    "elevationM": 947
+  },
+  "moel-siabod": {
+    "wikidataId": "Q6890110",
+    "lat": 53.073075,
+    "lng": -3.9324638888889,
+    "elevationM": 872
+  },
+  "pen-yr-ole-wen": {
+    "wikidataId": "Q1613487",
+    "lat": 53.137665,
+    "lng": -4.010657,
+    "elevationM": 978
+  },
+  "fan-brycheiniog": {
+    "wikidataId": "Q3397568",
+    "lat": 51.881438888889,
+    "lng": -3.7084805555556,
+    "elevationM": 803
+  },
+  "slieve-donard": {
+    "wikidataId": "Q550163",
+    "lat": 54.180277777778,
+    "lng": -5.9208333333333,
+    "elevationM": 849
+  },
+  "slieve-binnian": {
+    "wikidataId": "Q3259766",
+    "lat": 54.142719444444,
+    "lng": -5.9808305555556,
+    "elevationM": null
+  },
+  "zugspitze": {
+    "wikidataId": "Q3375",
+    "lat": 47.421217,
+    "lng": 10.986314,
+    "elevationM": 2962
+  },
+  "mulhacen": {
+    "wikidataId": "Q209528",
+    "lat": 37.053333333333,
+    "lng": -3.3113888888889,
+    "elevationM": 3479
+  },
+  "pico-ruivo": {
+    "wikidataId": "Q473169",
+    "lat": 32.758733333333,
+    "lng": -16.942255555556,
+    "elevationM": 1862
+  },
+  "mount-olympus": {
+    "wikidataId": "Q80344",
+    "lat": 40.083333333333336,
+    "lng": 22.35,
+    "elevationM": 2918
+  },
+  "mount-fuji": {
+    "wikidataId": "Q39231",
+    "lat": 35.36055555555556,
+    "lng": 138.7275,
+    "elevationM": 3777
+  },
+  "mount-kinabalu": {
+    "wikidataId": "Q60967",
+    "lat": 6.075,
+    "lng": 116.5586111111111,
+    "elevationM": 4095
+  },
+  "mount-takao": {
+    "wikidataId": "Q1329959",
+    "lat": 35.625277777778,
+    "lng": 139.24361111111,
+    "elevationM": 599
+  },
+  "mount-monadnock": {
+    "wikidataId": "Q289542",
+    "lat": 42.860833333333,
+    "lng": -72.108055555556,
+    "elevationM": 965
+  },
+  "mount-washington": {
+    "wikidataId": "Q572801",
+    "lat": 44.270827777778,
+    "lng": -71.303483333333,
+    "elevationM": 1917
+  },
+  "half-dome": {
+    "wikidataId": "Q925252",
+    "lat": 37.746,
+    "lng": -119.53316666667,
+    "elevationM": 2693
+  }
+}

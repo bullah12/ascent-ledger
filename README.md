@@ -35,6 +35,7 @@ npx prisma migrate deploy   # applies prisma/migrations to your database
 npm run db:seed             # BMG rules
 npm run db:seed:starters    # idempotent open-source starter routes
 npm run db:seed:tags        # idempotent curated route-tag vocabulary
+npm run db:seed:featured    # 50 featured peaks and 54 route overviews
 npm run dev
 ```
 
@@ -104,6 +105,7 @@ that is what you are hitting.
 | `npm run sync:routes -- --health` | Report recent import/checkpoint health |
 | `npm run db:seed:starters` | Upsert the verified starter-route pack and flags |
 | `npm run db:seed:tags` | Upsert the curated terrain/character/hazard/logistics tags |
+| `npm run db:seed:featured` | Upsert featured peaks and their route overviews |
 | `npx prisma generate` | Regenerate the Prisma client (into `src/generated/prisma`, gitignored) |
 
 The ingestion subsystem provides rotating Geofabrik PBF coverage for every
@@ -154,6 +156,7 @@ separately from the BMG gap recommender, whose dashboard behavior is unchanged.
 - `src/lib/auth.ts` — `requireUser()`: session → `User` row (upserted on
   first visit); every logbook query is scoped by `user_id`
 - `src/lib/prisma.ts` — Prisma client singleton (pg driver adapter)
+- `docs/FEATURED_PEAKS.md` — featured shortlist, source notes, and terrain artwork method
 - `prisma/schema.prisma` + `prisma.config.ts` — `User`/`Climb`/`Area` models
   and CLI config; connection comes from `DATABASE_URL`; migrations in
   `prisma/migrations/`

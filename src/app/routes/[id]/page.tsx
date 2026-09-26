@@ -17,6 +17,7 @@ import { projectPublicTicks, safeDisplayName } from "@/lib/community/privacy";
 import { tagChipsFromCounts } from "@/lib/community/tags";
 import { lineStringOrNull } from "@/lib/tracks";
 import { APPROVED_PUBLIC_ROUTE_WHERE } from "@/lib/routes/quality-policy";
+import { PeakArtwork } from "@/components/peak-artwork";
 
 function formatDuration(minutes: number | null) {
   if (!minutes) return "Not recorded";
@@ -32,6 +33,7 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
     where: { id, ...APPROVED_PUBLIC_ROUTE_WHERE },
     include: {
       area: { select: { name: true, region: true, country: true } },
+      peak: { select: { name: true, elevationM: true, imagePath: true } },
       sourceRecords: { where: { status: "active", publicationState: { not: "rejected" } }, orderBy: { source: "asc" } },
     },
   });
@@ -78,13 +80,14 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
   const characterTags = tags.filter((tag) => tag._count.routeTags > 0 && (tag.kind === "character" || tag.kind === "hazard")).slice(0, 2);
   const geometry = lineStringOrNull(route.pathGeojson);
   const location = route.lat !== null && route.lng !== null ? { lat: route.lat, lng: route.lng } : null;
-  const areaLine = [route.area?.name, route.area?.region, route.area?.country].filter(Boolean).join(" · ") || "Area not recorded";
+  const areaLine = [route.peak?.name, route.area?.region, route.area?.country].filter(Boolean).join(" · ") || [route.area?.name, route.area?.region, route.area?.country].filter(Boolean).join(" · ") || "Area not recorded";
 
   return (
     <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 pb-10 sm:px-6 lg:px-8">
       <SiteNav current="/routes" />
 
       <section className="topographic-placeholder relative -mt-8 min-h-[310px] overflow-hidden rounded-b-2xl text-white sm:-mx-6 lg:-mx-8">
+        {route.peak?.imagePath && <PeakArtwork name={route.peak.name} imagePath={route.peak.imagePath} className="absolute inset-0" sizes="100vw" priority />}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(14,38,27,.48),rgba(14,38,27,.93))]" />
         <div className="relative flex min-h-[310px] flex-col justify-between p-6 sm:p-9">
           <Link href="/routes" className="w-fit font-mono text-[11px] uppercase tracking-[0.06em] text-white/75 hover:text-white">‹ Routes / {route.area?.name ?? "route"}</Link>
@@ -127,6 +130,7 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
 
           <section>
             <h2 className="text-xl font-bold">The route</h2>
+            {route.externalSource === "ascent_ledger_featured" && <p className="mt-3 rounded-xl border border-primary/25 bg-primary/5 p-4 text-sm">This is a curated route overview. Check a current map, access information and conditions before setting out.</p>}
             {(route.geometryCompleteness === "incomplete" || route.geometryCompleteness === "clipped") && (
               <p className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
                 Route geometry is {route.geometryCompleteness}. Some sections may be disconnected or clipped at an extract boundary.
@@ -163,6 +167,7 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
 
           <div className="flex flex-wrap gap-2">
             {(route.sourceRecords[0] || legacyAttribution) && <Button variant="ghost" render={<a href={route.sourceRecords[0]?.externalUrl ?? route.externalUrl ?? legacyAttribution!.sourceUrl} />}>View source record</Button>}
+            {!route.sourceRecords.length && !legacyAttribution && route.externalUrl && <Button variant="ghost" render={<a href={route.externalUrl} target="_blank" rel="noopener noreferrer" />}>View route reference</Button>}
           </div>
 
           {(route.sourceRecords.length > 0 || legacyAttribution) && (
