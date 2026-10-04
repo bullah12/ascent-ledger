@@ -10,15 +10,15 @@ type PeakArtworkProps = {
 
 export function PeakArtwork({ name, imagePath, className = "", sizes = "80px", priority = false }: PeakArtworkProps) {
   return (
-    <span className={`topographic-placeholder relative block overflow-hidden ${className}`}>
+    <span className={`${imagePath ? "bg-[#f1ebdf]" : "topographic-placeholder"} relative block overflow-hidden ${className}`}>
       {imagePath && (
         <Image
           src={imagePath}
-          alt={name ? `Stylised terrain profile of ${name}` : "Stylised mountain terrain profile"}
+          alt={name ? `Illustrated landscape of ${name}` : "Illustrated mountain landscape"}
           fill
           sizes={sizes}
-          priority={priority}
-          className="object-cover"
+          preload={priority}
+          className="object-contain"
         />
       )}
     </span>

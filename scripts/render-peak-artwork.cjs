@@ -2,7 +2,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const peaks = require('../docs/featured_peaks.seed.json').peaks;
-const profiles = require('../docs/peak_profiles.json');
+const compositions = require('../docs/peak_artwork_compositions.json').peaks;
+const references = require('../docs/peak_artwork_references.json').peaks;
 
 const outDir = path.join(__dirname, '..', 'public', 'peaks');
 fs.mkdirSync(outDir, { recursive: true });
@@ -11,36 +12,68 @@ function escapeXml(value) {
   return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[char]);
 }
 
-function ridgePath(points, transform = (y) => y) {
-  return `M 0 ${transform(points[0]).toFixed(1)} ` + points.map((y, i) => `L ${(i * 1200 / (points.length - 1)).toFixed(1)} ${transform(y).toFixed(1)}`).join(' ') + ' L 1200 675 L 0 675 Z';
+const lakes = new Set(['schiehallion', 'ben-lomond', 'stac-pollaidh', 'helvellyn', 'blencathra', 'catbells', 'haystacks', 'pavey-ark', 'cadair-idris', 'y-garn', 'fan-brycheiniog', 'mount-fuji']);
+const wooded = new Set(['mount-takao', 'mount-monadnock', 'mount-washington', 'slieve-donard', 'half-dome']);
+
+// Validate the entire catalogue before overwriting any assets.
+for (const peak of peaks) {
+  const art = compositions[peak.slug];
+  if (!art?.skyline || !art.viewpoint || !art.features || !art.facets?.length || !references[peak.slug]?.sourceUrl) {
+    throw new Error(`${peak.slug}: missing reviewed composition or photographic reference`);
+  }
+  for (const d of [art.skyline, ...art.facets]) {
+    if (!/^M[0-9., MLQCZ-]+$/.test(d)) throw new Error(`${peak.slug}: invalid path`);
+  }
 }
 
 for (const peak of peaks) {
-  const elevations = profiles[peak.slug]?.elevations;
-  if (!elevations || elevations.length !== 81) throw new Error(`${peak.slug}: missing 81-point profile`);
-  const smoothed = elevations.map((value, i) => (value * 2 + (elevations[i - 1] ?? value) + (elevations[i + 1] ?? value)) / 4);
-  const floor = Math.min(...smoothed) - 65;
-  const ceiling = Math.max(...smoothed) + 45;
-  const points = smoothed.map((value) => 550 - (value - floor) / (ceiling - floor) * 420);
-  const front = ridgePath(points);
-  const middle = ridgePath(points, (y) => y * 0.65 + 225);
-  const distant = ridgePath(points, (y) => y * 0.42 + 350);
-  const contours = [45, 95, 145].map((offset) => `<path d="${ridgePath(points, (y) => y + offset)}" fill="none" stroke="#d8e2d2" stroke-opacity=".20" stroke-width="3"/>`).join('');
+  const art = compositions[peak.slug];
+  const outline = art.skyline + ' L100 56.25 L0 56.25 Z';
+  const facets = art.facets.map((d, i) => `<path d="${d}" fill="${i % 2 ? '#204637' : '#315541'}" opacity=".72"/>`).join('');
+  const strata = ['strata', 'tors'].includes(art.kind)
+    ? [3, 5, 7, 9].map(offset => `<path d="${art.skyline}" transform="translate(0 ${offset})" fill="none" stroke="#c7ceb1" stroke-opacity=".32" stroke-width=".24"/>`).join('')
+    : '';
+  const rock = ['cliff', 'ridge', 'dome'].includes(art.kind)
+    ? art.facets.map(d => `<path d="${d}" fill="none" stroke="#c9d1b7" stroke-opacity=".19" stroke-width=".16"/>`).join('')
+    : '';
+  const water = lakes.has(peak.slug)
+    ? `<path d="M0 49 Q19 47 35 48 Q61 46 79 48 L100 47 L100 56.25 L0 56.25Z" fill="#8ba79b"/>
+       <path d="M12 51 H39 M52 50 H81 M29 53 H68 M74 54 H94" stroke="#e0e5d1" stroke-opacity=".55" stroke-width=".18"/>`
+    : '';
+  const forest = wooded.has(peak.slug)
+    ? Array.from({ length: 36 }, (_, i) => {
+        const x = i * 3;
+        const y = 48 + Math.sin(i * 0.8) * 1.3;
+        const h = 1.1 + (i % 4) * .3;
+        return `<path d="M${x} ${y-h} l-1 ${h+1} h2Z" fill="#183d30"/>`;
+      }).join('')
+    : '';
+  const snow = peak.slug === 'mount-fuji'
+    ? '<path d="M38 29 L47 21 H53 L63 32 L55 29 L54 33 L50 27 L46 30 L45 27Z" fill="#eeeadd" opacity=".9"/>'
+    : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
-<title id="title">${escapeXml(peak.name)} terrain profile</title>
-<desc id="desc">Stylised east to west elevation cross-section through ${escapeXml(peak.name)}, based on NASA SRTM 90 metre terrain data via OpenTopoData. It is an illustration, not a route map or navigational aid.</desc>
-<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f6f0e5"/><stop offset="1" stop-color="#e8e2d3"/></linearGradient><clipPath id="ridge"><path d="${front}"/></clipPath></defs>
-<rect width="1200" height="675" fill="url(#paper)"/>
-<g fill="none" stroke="#c9c1af" stroke-opacity=".48" stroke-width="2">
-<path d="M-80 72 C135 -35 301 143 468 59 S801 -27 1260 80"/><path d="M-80 100 C135 -7 301 171 468 87 S801 1 1260 108"/>
-<path d="M-80 128 C135 21 301 199 468 115 S801 29 1260 136"/><path d="M-80 156 C135 49 301 227 468 143 S801 57 1260 164"/>
+<title id="title">${escapeXml(peak.name)} — illustrated landscape</title>
+<desc id="desc">${escapeXml(art.viewpoint)}. ${escapeXml(art.features)} Original simplified illustration informed by landscape photographs; not a measured panorama or route map.</desc>
+<metadata>Composition reference: ${escapeXml(references[peak.slug].sourceUrl)}</metadata>
+<rect width="1200" height="675" fill="#f1ebdf"/>
+<g transform="scale(12)">
+<g fill="none" stroke="#c7bdab" stroke-opacity=".36" stroke-width=".15">
+<path d="M-8 8 C12 -1 25 12 40 6 S73 0 105 9"/><path d="M-8 10 C12 1 25 14 40 8 S73 2 105 11"/>
+<path d="M-8 12 C12 3 25 16 40 10 S73 4 105 13"/>
 </g>
-<circle cx="995" cy="185" r="75" fill="#ddc9a4" fill-opacity=".42"/>
-<path d="${distant}" fill="#a9bea9"/><path d="${middle}" fill="#668b73"/>
-<path d="${front}" fill="#173b2d"/>
-<g clip-path="url(#ridge)">${contours}<path d="M0 618 C230 570 405 650 640 588 S1020 610 1200 560" fill="none" stroke="#c5d7c2" stroke-opacity=".18" stroke-width="4"/></g>
-</svg>`;
+<circle cx="84" cy="15" r="5.8" fill="#d6bd91" opacity=".42"/>
+<path d="M0 46 Q14 38 28 43 T56 42 T81 42 T100 40 V56.25 H0Z" fill="#b6c4ad"/>
+<defs><clipPath id="mountain"><path d="${outline}"/></clipPath></defs>
+<path d="${outline}" fill="#63806a"/>
+<g clip-path="url(#mountain)">
+${facets}${strata}${rock}${snow}
+<path d="M-5 48 Q21 42 40 48 T77 47 T108 45 V60 H-5Z" fill="#47674e" opacity=".48"/>
+</g>
+${water}${forest}
+<path d="M0 53 Q15 49 28 53 T60 55 Q82 50 100 53 V56.25 H0Z" fill="#183d30"/>
+<path d="M0 54 Q16 51 28 54 M75 54 Q87 52 100 54" fill="none" stroke="#d6d9bc" stroke-opacity=".24" stroke-width=".18"/>
+</g>
+</svg>\n`;
   fs.writeFileSync(path.join(outDir, `${peak.slug}.svg`), svg);
 }
-
-console.log(`Rendered ${peaks.length} terrain-profile illustrations`);
+console.log(`Rendered ${peaks.length} individually composed mountain landscapes`);

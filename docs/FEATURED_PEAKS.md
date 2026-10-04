@@ -20,14 +20,27 @@ overviews and asks visitors to check current conditions.
 
 ## Artwork
 
-Each SVG in `public/peaks/` traces an east-to-west elevation cross-section
-through a summit. The summit coordinates and Wikidata IDs are recorded in
-`peak_coordinates.json` and `peak_wikidata_ids.json`. The 81-point terrain samples
-in `peak_profiles.json` came from NASA SRTM 90 m data via the public
-[OpenTopoData SRTM endpoint](https://www.opentopodata.org/datasets/srtm/).
-`node scripts/render-peak-artwork.cjs` regenerates the SVGs locally without
-making network requests. The illustrations are stylised terrain profiles. They
-are not a skyline from a particular viewpoint or navigational route maps.
+Each SVG in `public/peaks/` is an individually composed landscape illustration.
+`peak_artwork_references.json` records the selected photographic references;
+`peak_artwork_compositions.json` records the viewpoint, identifying features,
+skyline and face shapes. The paper, green palette and contour motif are shared;
+the mountain geometry is individual. Broad tops must remain broad, and low
+moors must not be stretched into alpine peaks. These are simplified editorial
+interpretations, not photograph tracings, measured panoramas or route maps.
+
+`node scripts/render-peak-artwork.cjs` regenerates all 50 SVGs offline, validating
+that every peak has a composition and reference before writing. Existing asset
+paths are retained, so no database reseed is necessary. The shared image component
+fits the entire artwork into cards, square thumbnails and banners without cropping
+away the shoulders. Reference photographs are not redistributed or hotlinked in
+the application. See [the catalogue review](PEAK_ARTWORK_REVIEW.md) for all 54
+route entries, the chosen views and the distinction between a mountain portrait
+and a route-specific view.
+
+The old east–west elevation slices remain in `peak_profiles.json` as historical
+terrain data. They are no longer used to generate the artwork: a summit transect
+does not describe the visible skyline, and independent height normalisation
+exaggerated rounded and flat-topped mountains.
 
 If adding more peaks, check ambiguous Wikidata names by location before using
 `node scripts/fetch-peak-coordinates.cjs`. The public OpenTopoData instance

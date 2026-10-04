@@ -1,0 +1,484 @@
+{
+  "note": "Original simplified landscape compositions in a 100 × 56.25 coordinate space. Preserve aspect ratio: never normalise each skyline to a common summit height. Viewpoint is an editorial composition, not a surveyed camera position.",
+  "peaks": {
+    "ben-nevis": {
+      "viewpoint": "North face from the Allt a’ Mhuilinn corrie",
+      "features": "Broad summit rim above deep gullies and buttresses.",
+      "kind": "cliff",
+      "skyline": "M0 46 L15 39 L25 33 L31 17 L34 16 L39 17 L43 17 L46 18 L48 17 L52 18 L54 21 L56 19 L61 20 L64 22 L66 19 L73 19 L78 21 L84 25 L92 34 L100 39",
+      "facets": [
+        "M34 17 L40 32 L33 49 L15 55 Z",
+        "M54 21 L61 39 L55 49 L45 55 Z",
+        "M73 20 L79 35 L94 49 L70 53 Z"
+      ]
+    },
+    "ben-macdui": {
+      "viewpoint": "Across the Lairig Ghru from Cairn Toul",
+      "features": "A broad, gently domed plateau over a steep corrie wall.",
+      "kind": "plateau",
+      "skyline": "M0 43 L12 38 L22 32 Q31 24 39 23 L47 22 L57 22 Q64 23 69 26 L78 31 L89 36 L100 40",
+      "facets": [
+        "M39 23 L36 35 L22 46 L3 52 Z",
+        "M60 23 L64 36 L79 48 L52 54 Z"
+      ]
+    },
+    "cairn-gorm": {
+      "viewpoint": "Northern Cairngorms, across Loch Morlich",
+      "features": "Rounded summit dome set above wide northern corries.",
+      "kind": "rounded",
+      "skyline": "M0 43 Q10 38 19 37 L26 33 L31 30 Q36 27 41 29 L46 33 Q52 27 59 25 Q67 22 74 26 L82 33 L90 37 L100 40",
+      "facets": [
+        "M61 25 Q63 34 53 44 L35 52 L76 50 L74 31 Z"
+      ]
+    },
+    "schiehallion": {
+      "viewpoint": "Western end-on view from Loch Rannoch",
+      "features": "Recognisable near-symmetrical cone; the long ridge is foreshortened from the west.",
+      "kind": "cone",
+      "skyline": "M0 47 Q17 44 30 34 L42 24 L50 17 L55 21 L69 33 Q82 43 100 47",
+      "facets": [
+        "M50 17 L54 31 L74 47 L48 52 L30 47 Z"
+      ]
+    },
+    "ben-lomond": {
+      "viewpoint": "Across Loch Lomond from Luss",
+      "features": "A rounded summit above overlapping shoulders and the loch.",
+      "kind": "rounded",
+      "skyline": "M0 44 L12 40 L23 33 L29 31 L36 34 L45 26 Q52 20 59 23 L67 29 L74 30 L85 36 L100 42",
+      "facets": [
+        "M55 22 L50 35 L66 45 L92 50 L70 30 Z"
+      ]
+    },
+    "buachaille-etive-mor": {
+      "viewpoint": "Stob Dearg’s east face from Rannoch Moor",
+      "features": "A steep asymmetric pyramid with a broad rocky base.",
+      "kind": "cone",
+      "skyline": "M0 46 L13 40 L23 33 L32 29 L40 24 L47 22 L53 18 Q57 16 61 19 L68 23 L73 26 L79 35 L89 43 L100 48",
+      "facets": [
+        "M57 18 L53 29 L43 39 L29 49 L65 54 L67 32 Z",
+        "M70 25 L72 38 L88 49 L100 51 Z"
+      ]
+    },
+    "bidean-nam-bian": {
+      "viewpoint": "Glen Coe looking into the Three Sisters and Lost Valley",
+      "features": "Overlapping buttresses frame the valley; this shows the massif, not a falsely isolated summit.",
+      "kind": "ridge",
+      "skyline": "M0 31 L8 29 L16 35 L23 29 L31 23 L36 22 L44 25 L50 31 L58 41 L65 34 L72 25 L80 21 L86 24 L93 34 L100 38",
+      "facets": [
+        "M36 22 L34 37 L47 47 L60 53 L51 33 Z",
+        "M80 21 L73 37 L65 48 L85 54 Z"
+      ]
+    },
+    "meall-dearg": {
+      "viewpoint": "Along Aonach Eagach towards Meall Dearg",
+      "features": "A receding jagged crest with multiple notches, not a single pyramid.",
+      "kind": "ridge",
+      "skyline": "M0 46 L10 38 L18 35 L23 28 L27 32 L33 27 L36 31 L42 25 L47 28 L54 23 L61 20 L68 22 L77 26 L83 31 L91 34 L100 38",
+      "facets": [
+        "M23 28 L28 42 L11 56 L45 56 L42 36 Z",
+        "M61 20 L66 32 L88 45 L67 48 Z"
+      ]
+    },
+    "liathach": {
+      "viewpoint": "South-facing wall from Glen Torridon",
+      "features": "A long terraced sandstone wall, broken by high summits and pinnacles.",
+      "kind": "strata",
+      "skyline": "M0 43 L12 36 L21 31 L28 28 L34 29 L40 23 L44 21 L49 25 L54 24 L60 26 L67 21 L75 20 L82 16 L88 17 L94 19 L100 23",
+      "facets": [
+        "M44 21 L38 37 L17 51 L51 50 L55 31 Z",
+        "M82 16 L77 31 L60 45 L90 51 Z"
+      ]
+    },
+    "an-teallach": {
+      "viewpoint": "Along the Corrag Bhuidhe pinnacles towards the wider An Teallach ridge",
+      "features": "Stacked sandstone towers in the foreground, with an uneven skyline receding behind.",
+      "kind": "strata",
+      "skyline": "M0 46 L10 39 L18 30 L25 26 L30 21 L33 19 L36 21 L39 20 L42 24 L44 20 L47 19 L50 23 L52 31 L57 27 L62 23 L67 21 L71 25 L75 23 L79 27 L83 26 L88 31 L94 33 L100 34",
+      "facets": [
+        "M47 19 L44 34 L33 49 L55 52 L52 31 Z",
+        "M67 21 L61 34 L71 47 L94 50 L79 27 Z"
+      ]
+    },
+    "stac-pollaidh": {
+      "viewpoint": "South face across Loch Lurgainn",
+      "features": "A low elongated castellated crest on a broad grassy pedestal.",
+      "kind": "ridge",
+      "skyline": "M0 47 L15 44 L25 38 L29 32 L31 28 L34 28 L35 24 L38 23 L40 26 L44 24 L47 28 L50 25 L52 29 L56 26 L59 29 L61 26 L65 26 L68 31 L74 39 L88 45 L100 48",
+      "facets": [
+        "M38 23 L36 35 L28 46 L49 51 L46 31 Z",
+        "M61 26 L64 38 L75 46 L58 48 Z"
+      ]
+    },
+    "suilven": {
+      "viewpoint": "Broadside from the Glen Oykel approach",
+      "features": "Two unequal summits separated by a pronounced saddle above low moorland.",
+      "kind": "rounded",
+      "skyline": "M0 49 L12 47 L19 42 L24 30 Q29 22 36 22 Q40 22 43 27 L48 24 L53 19 L57 18 L62 24 L65 29 L72 36 L82 42 L100 48",
+      "facets": [
+        "M36 22 L32 35 L23 45 L47 49 L43 29 Z",
+        "M57 18 L53 34 L68 43 L84 48 Z"
+      ]
+    },
+    "ben-hope": {
+      "viewpoint": "Western escarpment from Strathmore",
+      "features": "A blunt summit with a steep western front and a long sloping shoulder.",
+      "kind": "plateau",
+      "skyline": "M0 47 L13 39 L23 38 L34 40 L43 34 L51 25 L57 20 Q61 19 65 20 L77 23 L87 25 L100 29",
+      "facets": [
+        "M59 20 L55 33 L42 43 L23 52 L61 51 L72 27 Z"
+      ]
+    },
+    "sgurr-alasdair": {
+      "viewpoint": "From Coire Lagan towards the Great Stone Chute",
+      "features": "Dark Cuillin walls and an unmistakably steep scree gully beneath the summit.",
+      "kind": "ridge",
+      "skyline": "M0 40 L10 31 L18 25 L24 19 L28 23 L34 17 L40 21 L46 31 L52 34 L58 20 L62 15 L66 19 L70 23 L75 20 L80 29 L89 37 L100 43",
+      "facets": [
+        "M34 17 L33 36 L49 51 L53 34 L44 29 Z",
+        "M62 15 L60 35 L48 52 L75 50 L70 28 Z"
+      ]
+    },
+    "scafell-pike": {
+      "viewpoint": "Wasdale approach through Hollow Stones",
+      "features": "Broken rock skyline and the adjoining crags enclosing Hollow Stones.",
+      "kind": "ridge",
+      "skyline": "M0 38 L10 31 L17 29 L22 32 L28 30 L34 29 L39 34 L45 36 L49 42 L54 43 L60 36 L64 32 L69 30 L72 25 L79 23 L85 24 L92 21 L100 25",
+      "facets": [
+        "M34 29 L28 43 L9 53 L48 53 Z",
+        "M79 23 L75 40 L58 52 L89 52 Z"
+      ]
+    },
+    "helvellyn": {
+      "viewpoint": "Facing the eastern headwall from Red Tarn",
+      "features": "Broad summit rim between Striding and Swirral Edges, with Red Tarn below.",
+      "kind": "corrie",
+      "skyline": "M0 32 L12 35 L22 36 L30 32 L38 24 L44 22 L51 22 L59 23 L65 27 L70 33 L75 27 L80 28 L87 34 L100 31",
+      "facets": [
+        "M44 22 L41 33 L34 44 L52 47 L57 25 Z",
+        "M65 27 L70 42 L91 46 L82 33 Z"
+      ]
+    },
+    "skiddaw": {
+      "viewpoint": "Southern skyline from Keswick",
+      "features": "Several rounded, overlapping summits and substantial grassy shoulders.",
+      "kind": "rounded",
+      "skyline": "M0 43 Q10 33 20 33 Q26 33 31 37 L39 29 Q45 25 50 26 L60 29 Q66 29 73 23 Q77 22 82 24 L89 25 L100 31",
+      "facets": [
+        "M49 26 Q44 36 29 49 L58 53 L69 30 Z",
+        "M79 23 L74 34 L94 48 L100 48 Z"
+      ]
+    },
+    "blencathra": {
+      "viewpoint": "Looking along Sharp Edge above Scales Tarn",
+      "features": "A broad upper fell with a narrow rocky arête enclosing the tarn.",
+      "kind": "corrie",
+      "skyline": "M0 32 L13 27 L25 24 Q34 22 43 24 L55 26 L64 30 L72 34 L78 35 L83 39 L90 41 L100 45",
+      "facets": [
+        "M25 24 L31 33 L56 42 L75 51 L48 49 L18 36 Z",
+        "M64 30 L60 36 L72 40 L86 46 L99 49 Z"
+      ]
+    },
+    "great-gable": {
+      "viewpoint": "From Wasdale Head towards Sty Head",
+      "features": "A bulky rocky dome with a steep shoulder and ribbed eastern face.",
+      "kind": "rounded",
+      "skyline": "M0 45 L15 38 L27 30 L37 23 Q45 18 51 21 L57 24 L62 25 L65 29 L72 31 L79 36 L90 41 L100 44",
+      "facets": [
+        "M48 20 L46 34 L63 43 L91 51 L66 30 Z"
+      ]
+    },
+    "catbells": {
+      "viewpoint": "Across Derwentwater from the eastern shore",
+      "features": "A compact rounded ridge, with a visible saddle between its tops.",
+      "kind": "rounded",
+      "skyline": "M0 48 Q14 44 22 38 Q27 34 32 35 L42 41 Q48 42 54 33 Q59 29 63 31 Q67 32 73 39 L83 43 L100 48",
+      "facets": [
+        "M60 30 Q54 38 55 45 L73 50 L83 46 Z"
+      ]
+    },
+    "haystacks": {
+      "viewpoint": "North-facing crags across Buttermere",
+      "features": "A low, lumpy craggy crest with numerous small tops.",
+      "kind": "ridge",
+      "skyline": "M0 43 L9 37 L16 33 L22 36 L28 32 L34 29 L38 32 L42 28 L46 29 L50 26 L54 29 L59 27 L64 30 L69 28 L74 33 L81 35 L89 40 L100 44",
+      "facets": [
+        "M34 29 L32 39 L20 47 L44 49 L47 33 Z",
+        "M59 27 L56 40 L69 47 L85 50 Z"
+      ]
+    },
+    "fairfield": {
+      "viewpoint": "Along the southern horseshoe from Heron Pike",
+      "features": "Rounded successive ridges lead to a wide, nearly level summit.",
+      "kind": "rounded",
+      "skyline": "M0 45 L13 40 L23 31 Q28 25 33 27 L42 32 L48 30 Q57 25 63 25 L73 26 L83 29 L100 35",
+      "facets": [
+        "M33 27 L32 39 L14 54 L40 53 L46 35 Z",
+        "M63 25 L60 37 L74 47 L91 51 Z"
+      ]
+    },
+    "bowfell": {
+      "viewpoint": "The Langdale face above the Three Tarns approach",
+      "features": "Angular summit above a long, uneven rocky shoulder.",
+      "kind": "ridge",
+      "skyline": "M0 46 L14 42 L24 37 L32 30 L38 25 L43 29 L50 24 L56 21 L62 20 L68 23 L76 22 L83 25 L91 27 L100 29",
+      "facets": [
+        "M62 20 L55 35 L41 44 L25 52 L63 51 L73 27 Z"
+      ]
+    },
+    "pavey-ark": {
+      "viewpoint": "Facing the cliff from Stickle Tarn",
+      "features": "A broad wall with a gently arched rim and diagonal rock ledges.",
+      "kind": "cliff",
+      "skyline": "M0 33 L15 30 L24 29 L32 27 L40 24 L47 23 L55 24 L61 26 L69 28 L76 32 L85 36 L100 39",
+      "facets": [
+        "M47 23 L44 36 L36 44 L60 47 L63 28 Z",
+        "M24 29 L20 40 L7 48 L35 49 Z"
+      ]
+    },
+    "kinder-scout": {
+      "viewpoint": "Southern plateau edge above Jacob’s Ladder",
+      "features": "A long low gritstone rim, with shallow undulations rather than a pointed top.",
+      "kind": "plateau",
+      "skyline": "M0 31 L12 30 L21 31 L28 29 L34 31 L43 32 L50 34 L59 34 L66 32 L74 33 L80 37 L88 39 L100 38",
+      "facets": [
+        "M28 29 L31 39 L51 49 L31 53 L12 42 Z",
+        "M66 32 L62 41 L78 49 L95 53 Z"
+      ]
+    },
+    "pen-y-ghent": {
+      "viewpoint": "Across the fields from Horton-in-Ribblesdale",
+      "features": "A blunt stepped crown, distinct limestone bands and steep southern nose.",
+      "kind": "strata",
+      "skyline": "M0 47 L17 44 L28 38 L39 31 L48 27 L55 25 L61 25 L65 28 L67 32 L70 35 L78 40 L100 47",
+      "facets": [
+        "M61 25 L59 34 L68 42 L89 50 L70 35 Z"
+      ]
+    },
+    "whernside": {
+      "viewpoint": "Long eastern ridge from Ribblehead",
+      "features": "A gently rising, elongated whaleback with no pointed apex.",
+      "kind": "rounded",
+      "skyline": "M0 43 Q15 38 26 35 Q39 31 52 30 L65 29 Q78 29 88 32 L100 37",
+      "facets": [
+        "M65 29 Q61 36 47 41 L25 50 L70 49 L89 34 Z"
+      ]
+    },
+    "yr-wyddfa": {
+      "viewpoint": "Northern massif from the Llanberis side",
+      "features": "Yr Wyddfa rises behind long shoulders and neighbouring ridges.",
+      "kind": "ridge",
+      "skyline": "M0 41 L13 35 L21 29 L28 31 L35 27 L43 28 L49 24 L55 18 L59 22 L63 27 L69 31 L75 33 L84 29 L91 33 L100 39",
+      "facets": [
+        "M55 18 L52 33 L37 45 L60 51 L70 32 Z"
+      ]
+    },
+    "tryfan": {
+      "viewpoint": "Northern profile from the Ogwen valley",
+      "features": "A steep fin of fractured rock with several summit teeth.",
+      "kind": "ridge",
+      "skyline": "M0 49 L15 44 L26 35 L32 29 L36 30 L40 22 L44 24 L48 16 L51 19 L54 15 L58 21 L61 20 L65 29 L68 28 L76 39 L85 44 L100 49",
+      "facets": [
+        "M54 15 L51 31 L35 46 L58 52 L67 30 Z"
+      ]
+    },
+    "glyder-fawr": {
+      "viewpoint": "Cwm Idwal headwall and the Glyder plateau",
+      "features": "A high broken plateau above steep slabs, rather than an isolated cone.",
+      "kind": "cliff",
+      "skyline": "M0 36 L12 32 L23 31 L30 27 L35 28 L42 23 L49 24 L55 22 L60 24 L67 23 L73 26 L80 27 L89 31 L100 35",
+      "facets": [
+        "M42 23 L40 38 L27 47 L53 52 L58 27 Z",
+        "M73 26 L69 39 L80 48 L96 50 Z"
+      ]
+    },
+    "glyder-fach": {
+      "viewpoint": "Bristly Ridge approaching the shattered summit plateau",
+      "features": "Angular pinnacles and split rock towers on a high rocky shoulder.",
+      "kind": "ridge",
+      "skyline": "M0 45 L12 38 L20 32 L25 34 L31 27 L34 29 L39 22 L42 25 L46 19 L49 23 L53 21 L57 24 L61 23 L65 26 L72 27 L80 32 L100 41",
+      "facets": [
+        "M46 19 L45 34 L30 49 L61 54 L59 29 Z",
+        "M31 27 L28 40 L14 48 L38 50 Z"
+      ]
+    },
+    "cadair-idris": {
+      "viewpoint": "The southern corrie wall from Llyn Cau",
+      "features": "A broad bowl with a rocky central crown enclosing the lake.",
+      "kind": "corrie",
+      "skyline": "M0 30 L10 33 L20 31 L28 29 L35 30 L43 26 L50 23 L56 22 L62 24 L67 27 L74 29 L82 34 L90 36 L100 34",
+      "facets": [
+        "M56 22 L51 34 L42 43 L64 47 L71 30 Z",
+        "M20 31 L26 43 L13 49 L0 47 Z"
+      ]
+    },
+    "pen-y-fan": {
+      "viewpoint": "Across the central Beacons from Cribyn",
+      "features": "Wide flat summit cap, steep layered face and a long grassy shoulder.",
+      "kind": "strata",
+      "skyline": "M0 48 L12 44 L23 39 L32 32 L39 23 L44 22 L52 22 L60 22 L64 23 L70 30 Q82 38 100 44",
+      "facets": [
+        "M44 22 L42 30 L34 40 L20 49 L46 52 L60 30 L64 23 Z"
+      ]
+    },
+    "cribyn": {
+      "viewpoint": "Facing Cribyn from Pen y Fan",
+      "features": "A sharper grassy wedge with a long receding ridge; distinct from Pen y Fan’s flat top.",
+      "kind": "strata",
+      "skyline": "M0 48 Q16 45 27 38 L40 30 L54 22 L58 24 L65 32 L72 35 L80 36 L88 39 L100 41",
+      "facets": [
+        "M54 22 L47 36 L35 48 L61 52 L67 33 Z"
+      ]
+    },
+    "y-garn": {
+      "viewpoint": "Eastern corrie from the shores of Llyn Idwal",
+      "features": "A broad rounded summit behind a steep corrie and rocky foreground ribs.",
+      "kind": "corrie",
+      "skyline": "M0 39 L12 34 L21 31 L27 25 L31 28 L35 33 L41 29 Q52 22 60 24 L69 27 L76 31 L86 33 L100 38",
+      "facets": [
+        "M59 24 L53 36 L63 46 L85 49 L74 30 Z",
+        "M27 25 L23 39 L9 49 L37 51 Z"
+      ]
+    },
+    "moel-siabod": {
+      "viewpoint": "Northeastern profile from the Capel Curig area",
+      "features": "An uneven rocky triangular crown over long grassy flanks.",
+      "kind": "cone",
+      "skyline": "M0 47 L14 42 L25 38 L35 32 L43 26 L49 23 L55 21 L59 24 L63 25 L67 31 L75 35 L86 41 L100 46",
+      "facets": [
+        "M55 21 L50 35 L37 46 L64 51 L72 34 Z"
+      ]
+    },
+    "pen-yr-ole-wen": {
+      "viewpoint": "Southern face across the Ogwen valley",
+      "features": "A bulky pyramidal face rising above the lake, with long Carneddau shoulders.",
+      "kind": "cone",
+      "skyline": "M0 45 L13 41 L25 34 L35 27 L43 20 L47 19 L51 23 L57 28 L65 32 L73 33 L81 37 L100 44",
+      "facets": [
+        "M47 19 L46 33 L30 46 L61 51 L65 32 Z"
+      ]
+    },
+    "fan-brycheiniog": {
+      "viewpoint": "Eastern escarpment above Llyn y Fan Fawr",
+      "features": "A long near-level sandstone rim with a steep scalloped face above the lake.",
+      "kind": "strata",
+      "skyline": "M0 37 L12 31 Q22 27 32 25 L43 24 L54 24 L66 25 L77 26 L86 29 L94 32 L100 33",
+      "facets": [
+        "M32 25 Q30 34 42 40 L58 44 L32 48 L17 40 Z",
+        "M66 25 Q58 36 68 40 L85 45 L98 42 L86 29 Z"
+      ]
+    },
+    "slieve-donard": {
+      "viewpoint": "Northeastern face from Newcastle’s promenade",
+      "features": "A broad rounded cone rising above wooded lower slopes.",
+      "kind": "rounded",
+      "skyline": "M0 44 L15 40 L27 36 L38 29 Q46 22 53 22 Q61 23 68 28 L76 31 L81 38 L88 40 L100 39",
+      "facets": [
+        "M53 22 L49 34 L33 46 L63 51 L78 34 Z"
+      ]
+    },
+    "slieve-binnian": {
+      "viewpoint": "Granite tors on the summit ridge",
+      "features": "Stacked, rounded granite towers with deep horizontal joints.",
+      "kind": "tors",
+      "skyline": "M0 46 L18 44 L28 40 L33 33 L36 33 L37 28 L40 28 L41 23 L45 22 L47 19 L53 18 L58 20 L61 26 L65 29 L67 24 L71 23 L75 26 L76 33 L80 37 L84 44 L100 47",
+      "facets": [
+        "M53 18 L55 31 L48 45 L68 49 L65 29 Z",
+        "M71 23 L69 35 L78 46 L89 49 Z"
+      ]
+    },
+    "zugspitze": {
+      "viewpoint": "Limestone walls above the Reintal and Zugspitzplatt",
+      "features": "A high rocky headwall over a broad scree basin.",
+      "kind": "ridge",
+      "skyline": "M0 22 L8 25 L15 31 L22 34 L29 33 L35 39 L42 35 L47 29 L52 25 L56 20 L60 22 L63 18 L66 23 L73 25 L81 32 L89 36 L100 39",
+      "facets": [
+        "M63 18 L60 32 L45 44 L68 51 L76 29 Z",
+        "M8 25 L10 35 L28 43 L36 49 L8 48 Z"
+      ]
+    },
+    "mulhacen": {
+      "viewpoint": "Southern slopes above Refugio Poqueira",
+      "features": "A broad gently sloping summit and a long high shoulder.",
+      "kind": "rounded",
+      "skyline": "M0 38 L12 32 L22 29 L32 24 Q38 20 43 22 L51 26 L62 30 L73 32 L84 35 L100 38",
+      "facets": [
+        "M42 21 L36 34 L20 46 L48 51 L68 34 Z"
+      ]
+    },
+    "pico-ruivo": {
+      "viewpoint": "Rocky approach from Achada do Teixeira",
+      "features": "Volcanic outcrops and vegetated shoulders along the approach.",
+      "kind": "ridge",
+      "skyline": "M0 44 L9 38 L15 31 L20 32 L23 26 L27 28 L30 24 L34 28 L38 33 L44 36 L50 35 L54 30 L58 27 L62 30 L68 31 L75 29 L81 32 L87 30 L94 38 L100 42",
+      "facets": [
+        "M30 24 L30 38 L20 49 L43 52 L39 34 Z",
+        "M58 27 L54 40 L68 48 L85 51 L76 32 Z"
+      ]
+    },
+    "mount-olympus": {
+      "viewpoint": "Mytikas and Skala from the high summit basin",
+      "features": "A blunt crenellated limestone crown beside the lower Skala shoulder.",
+      "kind": "cliff",
+      "skyline": "M0 44 L12 39 L18 27 L23 23 L32 23 L36 24 L39 20 L44 20 L47 23 L52 23 L55 28 L59 31 L63 37 L68 34 L72 29 L78 24 L84 26 L91 31 L100 35",
+      "facets": [
+        "M39 20 L35 35 L24 49 L50 52 L54 30 Z",
+        "M78 24 L72 38 L84 49 L100 49 Z"
+      ]
+    },
+    "mount-fuji": {
+      "viewpoint": "Northern profile across Lake Kawaguchi",
+      "features": "Sweeping concave volcanic flanks and a short flattened crater rim.",
+      "kind": "snow",
+      "skyline": "M0 47 Q20 43 33 33 Q43 25 47 21 L53 21 Q60 30 71 36 Q83 43 100 47",
+      "facets": [
+        "M53 21 Q58 34 78 45 L62 51 L44 45 L49 23 Z"
+      ]
+    },
+    "mount-kinabalu": {
+      "viewpoint": "Low’s Peak above the granite summit plateau",
+      "features": "A small pointed summit rising from an immense bare sloping granite platform.",
+      "kind": "cliff",
+      "skyline": "M0 37 L17 36 L29 34 L40 31 L46 29 L49 24 L52 27 L58 29 L68 32 L80 35 L91 40 L100 45",
+      "facets": [
+        "M49 24 L48 31 L60 36 L79 43 L69 46 L43 35 Z"
+      ]
+    },
+    "mount-takao": {
+      "viewpoint": "Wooded skyline from Hachioji",
+      "features": "A low rolling forest canopy, without a bare alpine summit.",
+      "kind": "forest",
+      "skyline": "M0 42 Q9 39 17 39 Q26 34 34 34 Q41 33 48 35 Q54 33 60 35 Q65 36 69 35 Q76 36 83 38 Q91 37 100 40",
+      "facets": [
+        "M34 34 Q42 38 35 44 L21 51 L55 52 L64 38 Z"
+      ]
+    },
+    "mount-monadnock": {
+      "viewpoint": "Isolated mountain above Dublin Lake",
+      "features": "A broad exposed rocky cap above a substantial forested base.",
+      "kind": "forest",
+      "skyline": "M0 46 L13 42 L23 38 L34 33 L42 30 Q49 27 55 28 L63 31 L71 34 L80 38 L91 42 L100 45",
+      "facets": [
+        "M55 28 L50 37 L35 46 L64 51 L75 37 Z"
+      ]
+    },
+    "mount-washington": {
+      "viewpoint": "Western Presidential Range from Bretton Woods",
+      "features": "A wide rounded summit with long shoulders and ravines.",
+      "kind": "rounded",
+      "skyline": "M0 39 L13 35 L24 32 L36 29 Q47 23 55 24 L61 26 L69 29 L78 33 L88 35 L100 39",
+      "facets": [
+        "M55 24 L51 35 L61 45 L87 50 L77 33 Z",
+        "M24 32 L20 43 L4 50 L39 51 Z"
+      ]
+    },
+    "half-dome": {
+      "viewpoint": "Northwest face from Yosemite Valley",
+      "features": "A near-vertical cut face meets the rounded granite dome.",
+      "kind": "dome",
+      "skyline": "M0 49 L14 43 L23 39 L28 30 L33 28 L38 15 Q40 13 44 15 Q51 13 58 17 Q68 21 77 31 L83 40 L90 46 L100 49",
+      "facets": [
+        "M40 15 L37 34 L31 47 L58 53 L59 26 L53 18 Z"
+      ]
+    }
+  }
+}

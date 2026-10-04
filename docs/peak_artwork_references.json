@@ -1,0 +1,256 @@
+{
+  "reviewedAt": "2026-10-04",
+  "note": "Photographic composition references only; photos are not redistributed. Artwork is an original simplified interpretation, not a traced photograph or measured panorama.",
+  "peaks": {
+    "ben-nevis": {
+      "sourceUrl": "https://www.geograph.org.uk/photo/2491264",
+      "imageUrl": "https://s0.geograph.org.uk/geophotos/02/49/12/2491264_0b2a0994.jpg",
+      "selection": "North Face Cliffs of Ben Nevis"
+    },
+    "ben-macdui": {
+      "sourceUrl": "https://www.viewlakeland.com/ben-macdui-ii",
+      "imageUrl": "https://images.on-this.website/22407_13155005624ff945e22d450.jpg",
+      "selection": "Winter View from Cairn Toul"
+    },
+    "cairn-gorm": {
+      "sourceUrl": "https://www.visitcairngorms.com/plan-your-visit/maps-webcams/",
+      "imageUrl": "https://www.visitcairngorms.com/wp-content/uploads/2023/11/visitscotland_34870435562-scaled-e1701183958288-1170x491.jpg",
+      "selection": "Loch Morlich Winter Reflection"
+    },
+    "schiehallion": {
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File%3ASchiehallion_from_Loch_Rannoch_-_geograph.org.uk_-_9414.jpg",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/92/Schiehallion_from_Loch_Rannoch_-_geograph.org.uk_-_9414.jpg",
+      "selection": "Schiehallion from Loch Rannoch"
+    },
+    "ben-lomond": {
+      "sourceUrl": "https://democratonline.net/2020/01/25/ben-lomond-from-luss-by-robert-beacon/",
+      "imageUrl": "https://i0.wp.com/democratonline.net/wp-content/uploads/2020/01/ben-lomond-from-luss-by-robert-beacon.jpg-2.jpg?resize=840%2C516&ssl=1",
+      "selection": "Ben Lomond from Luss"
+    },
+    "buachaille-etive-mor": {
+      "sourceUrl": "https://www.geograph.org.uk/photo/5160994",
+      "imageUrl": "https://s0.geograph.org.uk/geophotos/05/16/09/5160994_274df6dc.jpg",
+      "selection": "East Face of Stob Dearg"
+    },
+    "bidean-nam-bian": {
+      "sourceUrl": "https://www.scottishdailyexpress.co.uk/lifestyle/majestic-mountain-range-highlands-compared-30761759",
+      "imageUrl": "https://i2-prod.scottishdailyexpress.co.uk/article30762214.ece/ALTERNATES/s1200/0_GettyImages-547549807.jpg",
+      "selection": "Bidean nam Bian and the Three Sisters"
+    },
+    "meall-dearg": {
+      "sourceUrl": "https://www.colinandmargaret.co.uk/Munros/M188.htm",
+      "imageUrl": "https://www.colinandmargaret.co.uk/Munros/GlenCoe_JPG/AonachEagach1.jpg",
+      "selection": "Aonach Eagach Ridge Traverse"
+    },
+    "liathach": {
+      "sourceUrl": "https://www.geograph.org.uk/photo/5170155",
+      "imageUrl": "https://s0.geograph.org.uk/geophotos/05/17/01/5170155_60104c79.jpg",
+      "selection": "Liathach from Glen Torridon"
+    },
+    "an-teallach": {
+      "sourceUrl": "https://scotland-landscapes.com/tf-corrag-bhuidhe-pinnacles-an-teallach-sepia/",
+      "imageUrl": "https://scotland-landscapes.com/wp-content/uploads/2019/05/tf-corrag-bhuidhe-pinnacles-an-teallach-sepia.jpg",
+      "selection": "Corrag Bhuidhe pinnacles and the wider An Teallach ridge"
+    },
+    "stac-pollaidh": {
+      "sourceUrl": "https://www.tripadvisor.com/Attraction_Review-g316004-d10412345-Reviews-Stac_Pollaidh_Mountain-Ullapool_Scottish_Highlands_Scotland.html",
+      "imageUrl": "https://media-cdn.tripadvisor.com/media/photo-s/0b/fd/00/c2/stac-pollaidh-mountain.jpg",
+      "selection": "Stac Pollaidh and Loch Reflection"
+    },
+    "suilven": {
+      "sourceUrl": "https://sco.wikipedia.org/wiki/Suilven",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Suilven_Glen_Oykel_approach_%28geograph_2098590%29.jpg/1280px-Suilven_Glen_Oykel_approach_%28geograph_2098590%29.jpg",
+      "selection": "Suilven Mountain in the Scottish Highlands"
+    },
+    "ben-hope": {
+      "sourceUrl": "https://www.livefortheoutdoors.com/routes/hiking/ben-hope-walking-route-sutherland/",
+      "imageUrl": "https://images.bauerhosting.com/affiliates/sites/2/2024/02/Ben-Hope-from-Strath-More.jpg?auto=format&q=80&w=1200",
+      "selection": "Ben Hope Approach from Strathmore"
+    },
+    "sgurr-alasdair": {
+      "sourceUrl": "https://www.walkopedia.net/best-world-walks/United-Kingdom/Coire-Lagan-and-Sgurr-Alasdair",
+      "imageUrl": "https://www.walkopedia.net/assets/walkimages/2933/SgurrAlasdaircFlickruserJames.JPG",
+      "selection": "Coire Lagan and Sgurr Alasdair Hike"
+    },
+    "scafell-pike": {
+      "sourceUrl": "https://www.nationaltrust.org.uk/visit/lake-district/wasdale/scafell-pike-via-hollow-stones-route",
+      "imageUrl": "https://nt.global.ssl.fastly.net/binaries/content/gallery/website/national/regions/lake-district/places/wasdale/library/spring/view-of-scafell-pike-from-hollow-stones-in-wasdale-cumbria-1331229.jpg?auto=webp&crop=16%3A9&width=1200",
+      "selection": "View of Scafell Pike from Hollow Stones"
+    },
+    "helvellyn": {
+      "sourceUrl": "https://bluestoneimages.blogspot.com/2014/04/helvellyn-via-swirral-edge.html",
+      "imageUrl": "https://www1.clikpic.com/davebsi/images/01M-8968_Helvellyn_from_Red_Tarn_in_Winter_Lake_District_Cumbria_UK.jpg",
+      "selection": "Helvellyn’s Winter Reflection"
+    },
+    "skiddaw": {
+      "sourceUrl": "https://www.keswick.org/what-to-do/walking-routes/mountain-and-fell-walks-keswick",
+      "imageUrl": "https://img.keswick.org/cdn-cgi/image/w%3D1362%2Cq%3D80%2Cf%3Dauto/original/52818.jpg",
+      "selection": "Skiddaw Village View"
+    },
+    "blencathra": {
+      "sourceUrl": "https://www.jamesbellphotography.co.uk/blog/lake-district-walks/blencathra-via-sharp-edge",
+      "imageUrl": "https://www.jamesbellphotography.co.uk/blog/wp-content/uploads/2010/10/Sharp-Edge-225.jpg",
+      "selection": "Sharp Edge Ridge on Blencathra"
+    },
+    "great-gable": {
+      "sourceUrl": "https://www.geograph.org.uk/photo/2476650",
+      "imageUrl": "https://s0.geograph.org.uk/geophotos/02/47/66/2476650_bcfafca1.jpg",
+      "selection": "Great Gable from Burnthwaite Track"
+    },
+    "catbells": {
+      "sourceUrl": "https://www.martinlawrencephotography.com/gallery/view/over-the-gate-to-derwentwater-and-catbells/derwentwater-and-castlerigg",
+      "imageUrl": "https://www.martinlawrencephotography.com/images/uploads/gallery/2379/over-the-gate-to-derwentwater-and-catbells__small_2x.jpg",
+      "selection": "Over the Gate to Derwentwater and Catbells"
+    },
+    "haystacks": {
+      "sourceUrl": "https://www.martinlawrencephotography.com/gallery/view/reflections-of-haystacks-in-buttermere/buttermere-crummock-water-and-loweswater",
+      "imageUrl": "https://www.martinlawrencephotography.com/images/uploads/gallery/305/reflections-of-haystacks-in-buttermere-web__large.jpg",
+      "selection": "Reflections of Haystacks in Buttermere"
+    },
+    "fairfield": {
+      "sourceUrl": "https://www.geograph.org.uk/photo/7865326",
+      "imageUrl": "https://s0.geograph.org.uk/geophotos/07/86/53/7865326_47c9b8ac.jpg",
+      "selection": "View from Heron Pike Ridge"
+    },
+    "bowfell": {
+      "sourceUrl": "https://www.thewalkingdiary.co.uk/walks/bowfell-crinkle-crags-walk/",
+      "imageUrl": "https://walkingdiary.s3.amazonaws.com/images/walk/bowfell-crinkle-crags-walk/0926-IMG_1754.JPG",
+      "selection": "Bowfell and Crinkle Crags in Summer"
+    },
+    "pavey-ark": {
+      "sourceUrl": "https://www.wainwrightroutes.co.uk/paveyark_r1.htm",
+      "imageUrl": "https://www.wainwrightroutes.co.uk/images2/cf17_r1_14.jpg",
+      "selection": "Pavey Ark Above Stickle Tarn"
+    },
+    "kinder-scout": {
+      "sourceUrl": "https://www.nationaltrust.org.uk/visit/peak-district-derbyshire/kinder-edale-and-the-high-peak/kinder-scout-circular-walk",
+      "imageUrl": "https://nt.global.ssl.fastly.net/binaries/content/gallery/website/national/regions/peak-district-derbyshire/places/kinder-edale-and-the-high-peak/library/1427165-view-top-jacobs-ladder-kinder-scout.jpg",
+      "selection": "Kinder Scout Moorland Panorama"
+    },
+    "pen-y-ghent": {
+      "sourceUrl": "https://www.publicdomainpictures.net/en/view-image.php?image=214187&picture=view-to-and-from-pen-y-ghent",
+      "imageUrl": "https://www.publicdomainpictures.net/pictures/220000/velka/view-to-and-from-pen-y-ghent-1495560990Zeu.jpg",
+      "selection": "View Toward Pen-y-ghent"
+    },
+    "whernside": {
+      "sourceUrl": "https://www.geograph.org.uk/photo/3210020",
+      "imageUrl": "https://s0.geograph.org.uk/geophotos/03/21/00/3210020_7df23bab.jpg",
+      "selection": "Whernside from Blea Moor Sidings"
+    },
+    "yr-wyddfa": {
+      "sourceUrl": "https://www.ratedtrips.com/walking/snowdon-from-llanberis",
+      "imageUrl": "https://www.ratedtrips.com/images/styles/rt_slider/public/00212555_A3.jpg?itok=il6olayw",
+      "selection": "Snowdon from Llanberis"
+    },
+    "tryfan": {
+      "sourceUrl": "https://www.andrewsadventures.info/2011/Extreme-Ironing",
+      "imageUrl": "https://photos.smugmug.com/2011/Extreme-Ironing/i-54dnJ4g/0/LzqbRSDKNQ6zNdPZfNc94MbB72dz7DJjCjzFfW2gj/M/Tryfan%20close-up-M.jpg",
+      "selection": "Tryfan’s Craggy Summit"
+    },
+    "glyder-fawr": {
+      "sourceUrl": "https://wastwaterphotography.co.uk/shop/snowdonia",
+      "imageUrl": "https://images.squarespace-cdn.com/content/v1/55279e80e4b09173e4ad5c63/1695483380419-6NO2MD7AA4BW3MH44GQL/Dramatic-Shifting-Clouds-Above-Cwm-Idwal-On-Glyder-Fawr.jpg?format=1500w",
+      "selection": "Dramatic Clouds Over Glyder Fawr"
+    },
+    "glyder-fach": {
+      "sourceUrl": "https://www.komoot.com/highlight/4544279",
+      "imageUrl": "https://d2exd72xrrp1s7.cloudfront.net/www/000/1k6/t2/t2n2nil5eidi1e5s2pe9n79oa47hkrzy3-uhi50915742/0?crop=true&height=576&width=768",
+      "selection": "Bristly Ridge Scramble on Glyder Fach"
+    },
+    "cadair-idris": {
+      "sourceUrl": "https://www.pieracirefice.com/post/wild-swimming-in-snowdonia-cadair-idris",
+      "imageUrl": "https://static.wixstatic.com/media/cc6b35_7c5db1f6781341eead0781c92e322469~mv2.jpg/v1/fill/w_1000%2Ch_667%2Cal_c%2Cq_85%2Cusm_0.66_1.00_0.01/cc6b35_7c5db1f6781341eead0781c92e322469~mv2.jpg",
+      "selection": "Llyn Cau at Cadair Idris"
+    },
+    "pen-y-fan": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Powys",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/03/View_from_Cribyn_to_Pen_Y_Fan_-_geograph.org.uk_-_3447271_%28cropped%29.jpg",
+      "selection": "View from Cribyn to Pen y Fan"
+    },
+    "cribyn": {
+      "sourceUrl": "https://peapix.com/bing/32052",
+      "imageUrl": "https://img.peapix.com/d33f83693c3447fc8646c985e777fb2b_1280.jpg",
+      "selection": "Cribyn Ridge from Pen y Fan"
+    },
+    "y-garn": {
+      "sourceUrl": "https://ntprints.com/products/pod1041027",
+      "imageUrl": "https://ntprints.com/cdn/shop/products/si-1041027.jpg_maxdim-1000_resize-yes_1200x1200.jpg?v=1665754598",
+      "selection": "Llyn Idwal and Y Garn in Winter"
+    },
+    "moel-siabod": {
+      "sourceUrl": "https://www.picturesofengland.com/Wales/Gwynedd/Llanberis/Snowdonia/pictures/1027221",
+      "imageUrl": "https://www.picturesofengland.com/img/X/1027221.jpg",
+      "selection": "Moel Siabod from Nebo, Wales"
+    },
+    "pen-yr-ole-wen": {
+      "sourceUrl": "https://www.komoot.com/highlight/622320",
+      "imageUrl": "https://d2exd72xrrp1s7.cloudfront.net/www/000/1k4/1u/1uhl0vley5kd1kqbxnu531jcz3jxw63qq-uhi24921643/0?crop=true&height=576&width=768",
+      "selection": "Pen yr Ole Wen Overlooking Llyn Ogwen"
+    },
+    "fan-brycheiniog": {
+      "sourceUrl": "https://getoutdoorsuk.org/products/lyn-y-fan-fawr-hike-bannau-brycheiniog-brecon-beacons",
+      "imageUrl": "https://getoutdoorsuk.org/cdn/shop/files/IMG_4716_47fa082b-cb86-4e44-a4bd-6f1ede185dc6_800x.jpg?v=1758549605",
+      "selection": "Brecon Beacons’ Llyn y Fan Fawr"
+    },
+    "slieve-donard": {
+      "sourceUrl": "https://www.geograph.ie/photo/7964249",
+      "imageUrl": "https://s0.geograph.org.uk/geophotos/07/96/42/7964249_e699454a.jpg",
+      "selection": "Slieve Donard from Newcastle’s North Promenade"
+    },
+    "slieve-binnian": {
+      "sourceUrl": "https://discovernorthernireland.com/listing/slieve-binnian/69507101/",
+      "imageUrl": "https://irelanddmsmedia.newmindmedia.com/dmsimgs/7D520083ABC0C85E30E4D8B5EF4AD06F20473C71.jpg",
+      "selection": "Slieve Binnian Granite Tors"
+    },
+    "zugspitze": {
+      "sourceUrl": "https://www.komoot.com/de-de/tour/33825107",
+      "imageUrl": "https://d2exd72xrrp1s7.cloudfront.net/www/000/1k3/2u/2u6j3fgse5q9j690n883k0ye31n7fz2j-uhi6837004/0?crop=true&height=576&width=768",
+      "selection": "Alpine Plateau on Zugspitzplatt"
+    },
+    "mulhacen": {
+      "sourceUrl": "https://skitour.fr/sorties/32857",
+      "imageUrl": "https://skitour.fr/photos_rep/328/32857/405LH.jpg",
+      "selection": "Mulhacén South Face from Refugio Poqueira"
+    },
+    "pico-ruivo": {
+      "sourceUrl": "https://beyondmadeira.com/experiences/pico-ruivo-achada-do-teixeira-guided-hike",
+      "imageUrl": "https://images.beyondmadeira.com/tours/gallery/pico-ruivo-achada-do-teixeira-guided-hike/madeira-pico-ruivo-achada-do-teixeira-03.jpg",
+      "selection": "Madeira Mountain Trail"
+    },
+    "mount-olympus": {
+      "sourceUrl": "https://www.olympuspaths.com/photos-of-skolio-skala",
+      "imageUrl": "https://static.wixstatic.com/media/080261_4aa4cffe97f44ce89f4d08dbbe57a829~mv2.jpg/v1/crop/x_26%2Cy_0%2Cw_947%2Ch_641/fill/w_592%2Ch_398%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/skala.jpg",
+      "selection": "Mount Olympus Ridge with Mytikas and Skala"
+    },
+    "mount-fuji": {
+      "sourceUrl": "https://www.japan-travel.cn/spot/1329/",
+      "imageUrl": "https://www.japan-travel.cn/assets_c/2020/01/Yamanashi910_1-thumb-1200x630-1358.jpg",
+      "selection": "Mount Fuji Over Lake Kawaguchi"
+    },
+    "mount-kinabalu": {
+      "sourceUrl": "https://lenny-photography.blogspot.com/p/mount-kinabalu-sabah-land-below-wind.html",
+      "imageUrl": "https://1.bp.blogspot.com/_hQyTaPNxL84/TPjOZZzmQLI/AAAAAAAAARE/Gus5ZKwuxQY/s1600/DSC_3564%2528E%2529.JPG",
+      "selection": "Mount Kinabalu Summit Above the Clouds"
+    },
+    "mount-takao": {
+      "sourceUrl": "https://hnt-ubanvillagepark.jimdoweb.com/%E5%85%AC%E5%9C%92%E7%B4%B9%E4%BB%8B/%E9%AB%98%E5%B0%BE%E5%B1%B1%E3%81%8C%E8%A6%8B%E3%81%88%E3%82%8B%E5%85%AC%E5%9C%92-%E3%83%80%E3%82%A4%E3%83%A4%E3%83%A2%E3%83%B3%E3%83%89%E9%AB%98%E5%B0%BE%E5%B1%B1/",
+      "imageUrl": "https://image.jimcdn.com/app/cms/image/transf/none/path/s733a25709955c3b4/image/iac964c007ce3e06f/version/1657101160/image.jpg",
+      "selection": "Mount Takao from a New Town Neighborhood"
+    },
+    "mount-monadnock": {
+      "sourceUrl": "https://www.islands.com/2092872/dublin-new-hampshire-breathtaking-mountain-town-new-england-charm-lake-views-quaint-architecture/",
+      "imageUrl": "https://www.islands.com/img/gallery/dublin-new-hampshire-breathtaking-mountain-town-new-england-charm-lake-views-quaint-architecture/embrace-nature-around-dublin-new-hampshire-1770658807.jpg",
+      "selection": "Dublin’s Autumnal Lake View"
+    },
+    "mount-washington": {
+      "sourceUrl": "https://de-academic.com/dic.nsf/dewiki/37402",
+      "imageUrl": "https://de-academic.com/pictures/dewiki/77/Mt__Washington_from_Bretton_Woods.JPG",
+      "selection": "Mount Washington from Bretton Woods"
+    },
+    "half-dome": {
+      "sourceUrl": "https://www.internationalalpineguides.com/blog/2015/7/9/half-dome-rock-fall-an-iconic-climbing-route-forever-changed",
+      "imageUrl": "https://images.squarespace-cdn.com/content/54415277e4b090edefe289ba/1436471292077-EJVT0HJT4HJHESEY7M76/?content-type=image%2Fjpeg",
+      "selection": "Half Dome Northwest Face"
+    }
+  }
+}
